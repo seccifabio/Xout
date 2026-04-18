@@ -1083,13 +1083,8 @@ export default function Home() {
                   width: "100%",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
-                  <span className="badge" style={{ 
-                    background: selectionMode === 'manual' ? "rgba(0,0,0,0.05)" : "rgba(217,255,0,0.1)",
-                    color: selectionMode === 'manual' ? "black" : "var(--accent)"
-                  }}>
-                    {(ex as any).category || (ex as any).bodyArea || "EXERCISE"}
-                  </span>
+                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "0.5rem" }}>
+                  {/* Removed badge tag */}
                   <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
                     <button 
                       onClick={(e) => { e.stopPropagation(); toggleFavorite(ex.name); }}
@@ -1123,31 +1118,15 @@ export default function Home() {
                   fontSize: "2rem", 
                   fontWeight: "400", 
                   letterSpacing: "-0.01em", 
-                  marginBottom: "0.25rem",
+                  marginBottom: "0",
                   color: selectionMode === 'manual' ? "black" : "white"
                 }}>
                   {ex.name}
                 </h3>
                 
-                <p style={{ 
-                  color: selectionMode === 'manual' ? "black" : "var(--accent)", 
-                  fontWeight: "900", 
-                  fontSize: "1.25rem", 
-                  marginBottom: "1rem",
-                  opacity: selectionMode === 'manual' ? 1 : 0.9 
-                }}>
-                  {ex.reps} • {currentDuration}s
-                </p>
+                {/* Information hidden under title */}
                 
-                <p style={{ 
-                  fontSize: "0.9rem", 
-                  opacity: 0.5, 
-                  lineHeight: "1.5",
-                  marginBottom: "1.5rem",
-                  color: selectionMode === 'manual' ? "black" : "white"
-                }}>
-                  {ex.desc}
-                </p>
+
 
                 {selectionMode === 'manual' && (
                   <button 
