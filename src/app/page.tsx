@@ -168,11 +168,22 @@ export default function Home() {
   const wakeLockRef = useRef<any>(null);
   const dummyOscillatorRef = useRef<any>(null);
 
-  // Sync weights with localStorage
+  // Sync weights with localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('xout_weights');
-    if (saved) setWeights(JSON.parse(saved));
+    if (saved) {
+      try {
+        setWeights(JSON.parse(saved));
+      } catch (e) {}
+    }
   }, []);
+
+  // Synchronize weights back to localStorage on every change
+  useEffect(() => {
+    if (weights.length > 0) {
+      localStorage.setItem('xout_weights', JSON.stringify(weights));
+    }
+  }, [weights]);
 
   // MANIFESTO STATE: Track manual picks separately from hearts
   const [manualSession, setManualSession] = useState<Exercise[]>([]);
@@ -460,26 +471,22 @@ export default function Home() {
 
   const playBeep = () => {
     if (!isTrainingRef.current) return;
-    try {
-      const audioCtx = initAudio();
-      if (!audioCtx) return;
-      
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
-        gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        oscillator.start(audioCtx.currentTime);
-        oscillator.stop(audioCtx.currentTime + 0.3);
+    
+    // Web Audio Engine Bypass: 
+    // We cannot invoke .start() inside setInterval on iOS.
+    // Instead, we manipulate the gain of the continuously running phantom oscillator.
+    if (dummyOscillatorRef.current) {
+      try {
+        const { gain, ctx, osc } = dummyOscillatorRef.current;
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        // Spike volume, then aggressively fade to silent floor
+        gain.gain.cancelScheduledValues(ctx.currentTime);
+        gain.gain.setValueAtTime(1.0, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
       } catch (e) {
-        console.error("Audio ritual failed:", e);
+        console.error("Phantom manipulation failed:", e);
       }
+    }
   };
 
   const playIgnitionBeep = () => {
@@ -1628,7 +1635,12 @@ export default function Home() {
             {/* Controls row — centered */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "2.5rem", marginBottom: "2rem" }}>
               <button 
-                onClick={() => setIsPaused(!isPaused)}
+                onClick={() => {
+                  if (!isPaused && typeof window !== "undefined" && window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                  }
+                  setIsPaused(!isPaused);
+                }}
                 style={{
                   width: "56px", 
                   height: "56px", 
