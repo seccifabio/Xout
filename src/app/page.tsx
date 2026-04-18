@@ -409,8 +409,8 @@ export default function Home() {
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
 
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.1);
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.3);
       } catch (e) {
         console.error("Audio ritual failed:", e);
       }
