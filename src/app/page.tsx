@@ -567,7 +567,7 @@ export default function Home() {
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 1
+        zIndex: 5
       }}>
         {!(isTraining || isPreparing) && (
           <header className="animate" style={{ marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
