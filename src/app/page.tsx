@@ -938,7 +938,7 @@ export default function Home() {
                 </button>
 
                 {/* Area chips */}
-                {['All', 'Upper', 'Lower', 'Core', 'Full'].map(area => (
+                {['All', 'Upper', 'Lower', 'Core', 'Abs', 'Full'].map(area => (
                   <button
                     key={area}
                     onClick={() => setSelectedArea(area)}

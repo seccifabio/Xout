@@ -48,7 +48,17 @@
     { "id": "e36", "name": "Mike Tyson Push-Ups", "reps": "8", "highImpact": false, "requiresEquipment": false, "desc": "Kneel, sit back to heels, lean forward and push up.", "bodyArea": "Upper" },
     { "id": "e37", "name": "Finger Tip Push-Ups", "reps": "8", "highImpact": false, "requiresEquipment": false, "desc": "Push-up balancing on fingertips to build grip and wrist strength.", "bodyArea": "Upper" },
     { "id": "e38", "name": "Pull-Ups", "reps": "10", "highImpact": false, "requiresEquipment": true, "desc": "Hang from bar, pull chin above hands.", "bodyArea": "Upper" },
-    { "id": "e39", "name": "L-Sit Hold", "reps": "20 Seconds", "highImpact": false, "requiresEquipment": false, "desc": "From seated, press hands and lift legs parallel to floor.", "bodyArea": "Core" }
+    { "id": "e39", "name": "L-Sit Hold", "reps": "20 Seconds", "highImpact": false, "requiresEquipment": false, "desc": "From seated, press hands and lift legs parallel to floor.", "bodyArea": "Core" },
+    { "id": "e40", "name": "Crunches", "reps": "20", "highImpact": false, "requiresEquipment": false, "desc": "Standard abdominal crunch, lower back pressed to floor.", "bodyArea": "Abs" },
+    { "id": "e41", "name": "Sit-Ups (Abs)", "reps": "20", "highImpact": false, "requiresEquipment": false, "desc": "Full sit-up from floor, touching ankles at top.", "bodyArea": "Abs" },
+    { "id": "e42", "name": "Flutter Kicks (Abs)", "reps": "30", "highImpact": false, "requiresEquipment": false, "desc": "Rapid scissor kicks while lying on back.", "bodyArea": "Abs" },
+    { "id": "e43", "name": "Sitting Twists", "reps": "20", "highImpact": false, "requiresEquipment": false, "desc": "Russian twists, balancing on tailbone and rotating torso.", "bodyArea": "Abs" },
+    { "id": "e44", "name": "Leg Raises", "reps": "15", "highImpact": false, "requiresEquipment": false, "desc": "Lying on back, slowly raise and lower straight legs.", "bodyArea": "Abs" },
+    { "id": "e45", "name": "Heel Taps", "reps": "20 Each", "highImpact": false, "requiresEquipment": false, "desc": "Lying on back, knees bent, tap alternating heels.", "bodyArea": "Abs" },
+    { "id": "e46", "name": "Knee-to-Elbows", "reps": "10 Each", "highImpact": false, "requiresEquipment": false, "desc": "Lying on back, crunch up and touch knee to opposite elbow.", "bodyArea": "Abs" },
+    { "id": "e47", "name": "Up & Down Plank", "reps": "10", "highImpact": false, "requiresEquipment": false, "desc": "Transition from forearm plank to high plank and back.", "bodyArea": "Abs" },
+    { "id": "e48", "name": "Bicycle Crunches", "reps": "20", "highImpact": false, "requiresEquipment": false, "desc": "Pedal legs while touching opposite elbow to knee.", "bodyArea": "Abs" },
+    { "id": "e49", "name": "Hundred", "reps": "100", "highImpact": false, "requiresEquipment": false, "desc": "Pilates hundred: hold hollow body and pump arms.", "bodyArea": "Abs" }
   ],
   "cooldowns": [
     { "id": "c1", "name": "Hip Abduction", "reps": "10 Each", "highImpact": false, "requiresEquipment": false, "desc": "Slow controlled leg lift to the side.", "bodyArea": "Lower" },
