@@ -302,9 +302,8 @@ export default function Home() {
           // Check if we have favorites in this specific category bucket
           const catFavs = catPool.filter(ex => favorites.includes(ex.name));
           
-          // 50% chance to pick a favorite if one exists for this category, otherwise random
-          const useFav = catFavs.length > 0 && Math.random() > 0.5;
-          const randomEx = useFav 
+          // Prioritize picking a favorite if one exists for this category bucket
+          const randomEx = catFavs.length > 0
             ? catFavs[Math.floor(Math.random() * catFavs.length)]
             : catPool[Math.floor(Math.random() * catPool.length)];
             
