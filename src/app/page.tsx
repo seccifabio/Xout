@@ -394,11 +394,13 @@ export default function Home() {
       if (ctx && !dummyOscillatorRef.current) {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        gain.gain.value = 0.0001; // Essentially silent
+        osc.type = 'sine';
+        osc.frequency.value = 10; // Infrasound (inaudible)
+        gain.gain.value = 1.0; // Max volume, prevents iOS audio channel suspension
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
-        dummyOscillatorRef.current = { osc, gain };
+        dummyOscillatorRef.current = { osc, gain, ctx };
       }
     } catch (e) {
       console.error("Phantom audio eng failed", e);
@@ -472,17 +474,17 @@ export default function Home() {
   const playBeep = () => {
     if (!isTrainingRef.current) return;
     
-    // Web Audio Engine Bypass: 
+    // Web Audio Engine Bypass (The Infrasound Hack): 
     // We cannot invoke .start() inside setInterval on iOS.
-    // Instead, we manipulate the gain of the continuously running phantom oscillator.
+    // Our Phantom oscillator is blasting at 1.0 volume at 10Hz (Inaudible).
+    // To beep, we instantly snap the frequency to 880Hz, then snap it back to 10Hz.
     if (dummyOscillatorRef.current) {
       try {
-        const { gain, ctx, osc } = dummyOscillatorRef.current;
+        const { ctx, osc } = dummyOscillatorRef.current;
+        // Snap to audible 880Hz
         osc.frequency.setValueAtTime(880, ctx.currentTime);
-        // Spike volume, then aggressively fade to silent floor
-        gain.gain.cancelScheduledValues(ctx.currentTime);
-        gain.gain.setValueAtTime(1.0, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
+        // Snap back to invisible 10Hz after 0.3s
+        osc.frequency.setValueAtTime(10, ctx.currentTime + 0.3);
       } catch (e) {
         console.error("Phantom manipulation failed:", e);
       }
@@ -2073,6 +2075,8 @@ export default function Home() {
             <div style={{ display: "flex", gap: "0.75rem" }}>
               <input 
                 type="number" 
+                inputMode="decimal"
+                pattern="[0-9]*"
                 placeholder="00.0" 
                 id="weight-input"
                 style={{ flex: 1, minWidth: 0, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "1.2rem", color: "white", padding: "1rem", outline: "none", fontSize: "1.2rem", fontWeight: "900" }}
