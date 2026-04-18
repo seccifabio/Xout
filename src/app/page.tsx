@@ -14,19 +14,7 @@ interface Exercise {
   duration?: number;
 }
 
-let globalAudioCtx: any = null;
-const initAudio = () => {
-  if (typeof window !== "undefined") {
-    if (!globalAudioCtx) {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioContextClass) globalAudioCtx = new AudioContextClass();
-    }
-    if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
-      globalAudioCtx.resume();
-    }
-  }
-  return globalAudioCtx;
-};
+
 
 export default function Home() {
   const [session, setSession] = useState<Exercise[]>([]);
@@ -166,7 +154,16 @@ export default function Home() {
   const [isWeightOpen, setIsWeightOpen] = useState(false);
 
   const wakeLockRef = useRef<any>(null);
-  const dummyOscillatorRef = useRef<any>(null);
+  
+  const beepAudioRef = useRef<any>(null);
+  const ignitionAudioRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      beepAudioRef.current = new window.Audio("/beep.wav");
+      ignitionAudioRef.current = new window.Audio("/ignition.wav");
+    }
+  }, []);
 
   // Sync weights with localStorage on mount
   useEffect(() => {
@@ -387,23 +384,12 @@ export default function Home() {
     setTimeLeft(expandedSession[0].duration || globalDuration);
     playIgnitionBeep();
     
-    // START PHANTOM OSCILLATOR: iOS aggressively suspends silent audio contexts.
-    // Driving a silent stream ensures the 3-2-1 timer beeps are never blocked.
-    try {
-      const ctx = initAudio();
-      if (ctx && !dummyOscillatorRef.current) {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = 10; // Infrasound (inaudible)
-        gain.gain.value = 1.0; // Max volume, prevents iOS audio channel suspension
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        dummyOscillatorRef.current = { osc, gain, ctx };
-      }
-    } catch (e) {
-      console.error("Phantom audio eng failed", e);
+    // Unlock native HTML5 audio for iOS background processing
+    if (beepAudioRef.current) {
+      beepAudioRef.current.play().then(() => {
+        beepAudioRef.current.pause();
+        beepAudioRef.current.currentTime = 0;
+      }).catch(() => {});
     }
 
     // iOS Safari Hack: Fire a silent utterance immediately to tether the Speech queue to the user interaction
@@ -423,16 +409,6 @@ export default function Home() {
     setIsTraining(false);
     setIsPreparing(false);
     isTrainingRef.current = false;
-    
-    // Shut down the Phantom Stream
-    if (dummyOscillatorRef.current) {
-      try {
-        dummyOscillatorRef.current.osc.stop();
-        dummyOscillatorRef.current.osc.disconnect();
-        dummyOscillatorRef.current.gain.disconnect();
-      } catch (e) {}
-      dummyOscillatorRef.current = null;
-    }
     
     setTrainingSession([]);
     setCurrentIndex(0);
@@ -473,47 +449,17 @@ export default function Home() {
 
   const playBeep = () => {
     if (!isTrainingRef.current) return;
-    
-    // Web Audio Engine Bypass (The Infrasound Hack): 
-    // We cannot invoke .start() inside setInterval on iOS.
-    // Our Phantom oscillator is blasting at 1.0 volume at 10Hz (Inaudible).
-    // To beep, we instantly snap the frequency to 880Hz, then snap it back to 10Hz.
-    if (dummyOscillatorRef.current) {
-      try {
-        const { ctx, osc } = dummyOscillatorRef.current;
-        // Snap to audible 880Hz
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        // Snap back to invisible 10Hz after 0.3s
-        osc.frequency.setValueAtTime(10, ctx.currentTime + 0.3);
-      } catch (e) {
-        console.error("Phantom manipulation failed:", e);
-      }
+    if (beepAudioRef.current) {
+      beepAudioRef.current.currentTime = 0;
+      beepAudioRef.current.play().catch(() => {});
     }
   };
 
   const playIgnitionBeep = () => {
     if (!isTrainingRef.current) return;
-    try {
-      const audioCtx = initAudio();
-      if (!audioCtx) return;
-      
-      const playTone = (freq: number, start: number, duration: number) => {
-        const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + start);
-          gain.gain.setValueAtTime(0.1, audioCtx.currentTime + start);
-          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + start + duration);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(audioCtx.currentTime + start);
-          osc.stop(audioCtx.currentTime + start + duration);
-        };
-
-        playTone(880, 0, 0.15);
-        playTone(1320, 0.1, 0.2); 
-    } catch (e) {
-      console.error("Ignition sound failed:", e);
+    if (ignitionAudioRef.current) {
+      ignitionAudioRef.current.currentTime = 0;
+      ignitionAudioRef.current.play().catch(() => {});
     }
   };
 
@@ -2074,9 +2020,8 @@ export default function Home() {
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "2rem" }}>
             <div style={{ display: "flex", gap: "0.75rem" }}>
               <input 
-                type="number" 
+                type="text" 
                 inputMode="decimal"
-                pattern="[0-9]*"
                 placeholder="00.0" 
                 id="weight-input"
                 style={{ flex: 1, minWidth: 0, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "1.2rem", color: "white", padding: "1rem", outline: "none", fontSize: "1.2rem", fontWeight: "900" }}
@@ -2092,7 +2037,7 @@ export default function Home() {
               onClick={() => {
                 const valInput = document.getElementById('weight-input') as HTMLInputElement;
                 const dateInput = document.getElementById('weight-date') as HTMLInputElement;
-                const val = parseFloat(valInput.value);
+                const val = parseFloat(valInput.value.replace(',', '.'));
                 const date = dateInput.value;
                 if (!isNaN(val)) {
                   setWeights(prev => [...prev, { date, value: val }].sort((a,b) => a.date.localeCompare(b.date)));
