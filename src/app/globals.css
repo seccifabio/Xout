@@ -161,3 +161,23 @@ main {
   pointer-events: none;
   z-index: 10;
 }
+
+@keyframes slowPan {
+  0% { transform: scale(1.1) translate(-1%, -1%); }
+  25% { transform: scale(1.1) translate(1%, -0.5%); }
+  50% { transform: scale(1.1) translate(0.5%, 1%); }
+  75% { transform: scale(1.1) translate(-0.5%, 0.5%); }
+  100% { transform: scale(1.1) translate(-1%, -1%); }
+}
+
+.bg-animated {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/Background.jpeg') center/cover no-repeat;
+  animation: slowPan 40s ease-in-out infinite;
+  pointer-events: none;
+}

@@ -548,26 +548,29 @@ export default function Home() {
     return "black";
   };
 
+  const isDefaultPage = selectionMode === 'surprise' && !isTraining && !isPreparing && session.length === 0;
+
   return (
-    <main style={{ 
-      height: (isTraining || isPreparing) ? "100dvh" : "100%", /* Dynamic Viewport Height for mobile */
-      width: "100%",
-      overflowY: (isTraining || isPreparing) ? "hidden" : "auto", 
-      padding: "1.5rem", 
-      paddingTop: "2rem",
-      background: (selectionMode === 'surprise' && !isTraining && !isPreparing && session.length === 0) 
-        ? `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/Background.jpeg') center/cover no-repeat fixed` 
-        : currentBackground(),
-      transition: "background 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-      color: (isTraining || isPreparing) ? ((isPreparing && prepareTime <= 3) ? "black" : "white") : (selectionMode === 'manual' ? "black" : "white"),
-      position: (isTraining || isPreparing) ? "fixed" : "relative",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0
-    }}>
-      {!(isTraining || isPreparing) && (
-        <header className="animate" style={{ marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <>
+      {isDefaultPage && <div className="bg-animated" />}
+      <main style={{ 
+        height: (isTraining || isPreparing) ? "100dvh" : "100%", 
+        width: "100%",
+        overflowY: (isTraining || isPreparing) ? "hidden" : "auto", 
+        padding: "1.5rem", 
+        paddingTop: "2rem",
+        background: isDefaultPage ? "transparent" : currentBackground(),
+        transition: "background 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        color: (isTraining || isPreparing) ? ((isPreparing && prepareTime <= 3) ? "black" : "white") : (selectionMode === 'manual' ? "black" : "white"),
+        position: (isTraining || isPreparing) ? "fixed" : "relative",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1
+      }}>
+        {!(isTraining || isPreparing) && (
+          <header className="animate" style={{ marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h1 
             className="title" 
             onClick={() => {
