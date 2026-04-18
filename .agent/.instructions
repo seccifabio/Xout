@@ -1,0 +1,11 @@
+import { Button } from "@/components/ui/button"
+import { ChevronRight } from "lucide-react"
+
+export function GetStarted() {
+  return (
+    <Button className="rounded-xl shadow-md hover:scale-105 transition-all">
+      Get Started <ChevronRight className="ml-2 h-4 w-4" />
+    </Button>
+  )
+}
+"You have access to the Prompt Perfector skill in .agent/skills. If my request is vague, offer to run this skill to improve the output."
