@@ -891,14 +891,20 @@ export default function Home() {
                 <button
                   onClick={() => { setIsSearching(false); setSearchQuery(''); }}
                   style={{
-                    background: "none",
+                    background: "white",
                     border: "none",
-                    padding: "0.75rem 1rem",
+                    width: "30px",
+                    height: "30px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                     cursor: "pointer",
-                    color: selectionMode === 'manual' ? "#daff00" : "rgba(255,255,255,0.45)",
-                    fontSize: "1rem",
-                    lineHeight: 1,
-                    flexShrink: 0
+                    color: "black",
+                    fontSize: "0.9rem",
+                    fontWeight: "900",
+                    flexShrink: 0,
+                    marginRight: "0.5rem"
                   }}
                 >
                   ✕
