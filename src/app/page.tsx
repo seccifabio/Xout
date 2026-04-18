@@ -1320,8 +1320,8 @@ export default function Home() {
                 borderBottom: "1px solid rgba(0,0,0,0.1)"
               }}>
                 <div>
-                  <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>CURRENT SESSION</h2>
-                  <span style={{ fontSize: "0.6rem", opacity: 0.5, letterSpacing: "0.1em", fontWeight: "900" }}>{session.length} / {maxExercises} MOVEMENTS IN TRAY</span>
+                  <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>CURRENT RITUAL</h2>
+                  <span style={{ fontSize: "0.6rem", opacity: 0.5, letterSpacing: "0.1em", fontWeight: "900" }}>{session.length} MOVEMENTS TO START</span>
                 </div>
                 <button 
                   onClick={() => setIsTrayExpanded(false)}
@@ -1429,8 +1429,37 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Bottom Padding for Safe Area */}
-              <div style={{ height: "4rem" }} />
+              {/* TRAY ACTION BUTTON */}
+              <div style={{ 
+                padding: "1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom))", 
+                background: "rgba(218, 255, 0, 0.1)",
+                borderTop: "1px solid rgba(0,0,0,0.05)",
+                display: "flex",
+                justifyContent: "center"
+              }}>
+                <button 
+                  onClick={() => {
+                    setIsTrayExpanded(false);
+                    startSession();
+                  }}
+                  style={{
+                    background: "black",
+                    color: "#daff00",
+                    border: "none",
+                    width: "100%",
+                    maxWidth: "280px",
+                    padding: "1.2rem",
+                    borderRadius: "100px",
+                    fontSize: "1.2rem",
+                    fontWeight: "900",
+                    letterSpacing: "0.2em",
+                    cursor: "pointer",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.15)"
+                  }}
+                >
+                  GO
+                </button>
+              </div>
             </div>
 
             <div style={{ display: "flex", gap: "0.8rem", alignItems: "center", justifyContent: "center" }}>
@@ -1508,15 +1537,15 @@ export default function Home() {
               {session.length > 0 && (
                 <button 
                   className="button" 
-                  onClick={startSession}
+                  onClick={() => setIsTrayExpanded(true)}
                   style={{ 
-                    width: "80px", 
+                    width: "140px", 
                     height: "80px", 
-                    flex: "0 0 80px",
-                    fontSize: "1.2rem", 
+                    flex: "0 0 140px",
+                    fontSize: "0.9rem", 
                     letterSpacing: "0.1em", 
                     fontWeight: "900", 
-                    borderRadius: "50%",
+                    borderRadius: "40px",
                     background: selectionMode === 'manual' ? "black" : "var(--accent)",
                     color: selectionMode === 'manual' ? "#daff00" : "black",
                     border: "none",
@@ -1527,7 +1556,7 @@ export default function Home() {
                     boxShadow: selectionMode === 'manual' ? "0 10px 20px rgba(0,0,0,0.15)" : "0 10px 20px rgba(218, 255, 0, 0.2)"
                   }}
                 >
-                  GO
+                  GET READY
                 </button>
               )}
             </div>
@@ -2193,6 +2222,7 @@ export default function Home() {
                         setSession(workout.exercises);
                         setIsLibraryOpen(false);
                         setIsOptionsOpen(false);
+                        setIsTrayExpanded(true);
                       }}
                       style={{
                         background: "var(--accent)",
