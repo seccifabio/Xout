@@ -1320,7 +1320,7 @@ export default function Home() {
                 borderBottom: "1px solid rgba(0,0,0,0.1)"
               }}>
                 <div>
-                  <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>CURRENT RITUAL</h2>
+                  <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>CURRENT WORKOUT</h2>
                   <span style={{ fontSize: "0.6rem", opacity: 0.5, letterSpacing: "0.1em", fontWeight: "900" }}>{session.length} MOVEMENTS TO START</span>
                 </div>
                 <button 
@@ -1539,13 +1539,13 @@ export default function Home() {
                   className="button" 
                   onClick={() => setIsTrayExpanded(true)}
                   style={{ 
-                    width: "140px", 
+                    width: "80px", 
                     height: "80px", 
-                    flex: "0 0 140px",
-                    fontSize: "0.9rem", 
+                    flex: "0 0 80px",
+                    fontSize: "1.2rem", 
                     letterSpacing: "0.1em", 
                     fontWeight: "900", 
-                    borderRadius: "40px",
+                    borderRadius: "50%",
                     background: selectionMode === 'manual' ? "black" : "var(--accent)",
                     color: selectionMode === 'manual' ? "#daff00" : "black",
                     border: "none",
@@ -1556,7 +1556,7 @@ export default function Home() {
                     boxShadow: selectionMode === 'manual' ? "0 10px 20px rgba(0,0,0,0.15)" : "0 10px 20px rgba(218, 255, 0, 0.2)"
                   }}
                 >
-                  GET READY
+                  GO
                 </button>
               )}
             </div>
