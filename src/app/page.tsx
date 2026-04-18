@@ -337,6 +337,14 @@ export default function Home() {
     setCurrentIndex(0);
     setTimeLeft(expandedSession[0].duration || globalDuration);
     playIgnitionBeep();
+    
+    // iOS Safari Hack: Fire a silent utterance immediately to tether the Speech queue to the user interaction
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      const silentUtterance = new SpeechSynthesisUtterance("");
+      silentUtterance.volume = 0;
+      window.speechSynthesis.speak(silentUtterance);
+    }
+    
     speak(`Get ready. First exercise: ${expandedSession[0].name}. ${expandedSession[0].desc}`);
   };
 
@@ -395,8 +403,8 @@ export default function Home() {
 
         oscillator.type = 'sine';
         oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
 
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
@@ -539,7 +547,19 @@ export default function Home() {
     }}>
       {!(isTraining || isPreparing) && (
         <header className="animate" style={{ marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h1 className="title" style={{ color: selectionMode === 'manual' ? "black" : "white", margin: 0 }}>
+          <h1 
+            className="title" 
+            onClick={() => {
+              setSelectionMode('surprise');
+              clearSession();
+              setSearchQuery("");
+            }}
+            style={{ 
+              color: selectionMode === 'manual' ? "black" : "white", 
+              margin: 0, 
+              cursor: "pointer" 
+            }}
+          >
             x<span style={{ color: selectionMode === 'manual' ? "rgba(0,0,0,0.3)" : "var(--accent)" }}>out</span>
           </h1>
 
@@ -745,8 +765,8 @@ export default function Home() {
               style={{
                 width: "64px",
                 height: "64px",
-                background: "rgba(255,255,255,0.05)",
-                color: "white",
+                background: favorites.length > 0 ? "rgba(217,255,0,0.1)" : "rgba(255,255,255,0.05)",
+                color: favorites.length > 0 ? "var(--accent)" : "white",
                 border: "none",
                 borderRadius: "50%",
                 cursor: "pointer",
@@ -774,20 +794,24 @@ export default function Home() {
               style={{
                 width: "64px",
                 height: "64px",
-                background: "rgba(255,255,255,0.05)",
-                color: "white",
+                background: weights.length > 0 ? "rgba(217,255,0,0.1)" : "rgba(255,255,255,0.05)",
+                color: weights.length > 0 ? "var(--accent)" : "white",
                 border: "none",
                 borderRadius: "50%",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "all 0.2s"
+                transition: "all 0.2s",
+                position: "relative"
               }}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 8L13 6M7.0998 7.0011C7.03435 7.32387 7 7.65792 7 8C7 10.7614 9.23858 13 12 13C14.7614 13 17 10.7614 17 8C17 7.65792 16.9656 7.32387 16.9002 7.0011M7.0998 7.0011C7.56264 4.71831 9.58065 3 12 3C14.4193 3 16.4374 4.71831 16.9002 7.0011M7.0998 7.0011C5.87278 7.00733 5.1837 7.04895 4.63803 7.32698C4.07354 7.6146 3.6146 8.07354 3.32698 8.63803C3 9.27976 3 10.1198 3 11.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V11.8C21 10.1198 21 9.27976 20.673 8.63803C20.3854 8.07354 19.9265 7.6146 19.362 7.32698C18.8163 7.04895 18.1272 7.00733 16.9002 7.0011" />
               </svg>
+              {weights.length > 0 && (
+                <span style={{ position: "absolute", fontSize: "0.5rem", color: "black", fontWeight: "900", marginTop: "-0.1rem" }}>{weights.length}</span>
+              )}
             </button>
             <span style={{ fontSize: "0.6rem", fontWeight: "900", letterSpacing: "0.1em", opacity: 0.4, color: "white" }}>WEIGHT</span>
           </div>
@@ -1128,7 +1152,7 @@ export default function Home() {
 
                 {selectionMode === 'surprise' && (
                   <button 
-                    onClick={() => swapExercise(i)}
+                    onClick={(e) => { e.stopPropagation(); swapExercise(i); }}
                     style={{
                       position: "absolute",
                       bottom: "1.5rem",
