@@ -1381,15 +1381,15 @@ export default function Home() {
               {selectionMode !== 'manual' && (
                 <button 
                   className="generate-btn" 
-                  onClick={selectionMode === 'surprise' ? generateSession : () => setSelectionMode('surprise')}
+                  onClick={generateSession}
                   style={{ 
                     flex: "0 0 60px", 
                     width: "60px",
                     height: "60px", 
                     padding: 0, 
                     borderRadius: "999px", 
-                    background: selectionMode === 'manual' ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)", 
-                    border: selectionMode === 'manual' ? "0.5px solid rgba(0,0,0,0.1)" : "0.5px solid rgba(255,255,255,0.1)", 
+                    background: "rgba(255,255,255,0.05)", 
+                    border: "0.5px solid rgba(255,255,255,0.1)", 
                     cursor: "pointer", 
                     display: "flex", 
                     alignItems: "center", 
@@ -1398,7 +1398,7 @@ export default function Home() {
                 >
                   <span style={{ 
                     fontSize: selectionMode === 'surprise' ? "1.8rem" : "0.7rem", 
-                    color: selectionMode === 'manual' ? "black" : "white", 
+                    color: "white", 
                     fontWeight: "900" 
                   }}>
                     {selectionMode === 'surprise' ? "⟳" : "AUTO"}
