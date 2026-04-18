@@ -1485,7 +1485,7 @@ export default function Home() {
               marginBottom: "0.5rem",
               display: "block"
             }}>
-              {isPreparing ? "GET READY" : (trainingSession[currentIndex]?.category || "EXERCISE")}
+              {isPreparing ? "GET READY" : (trainingSession[currentIndex]?.bodyArea || "EXERCISE")}
             </span>
             <h2 style={{ 
               fontSize: "2.8rem", 
