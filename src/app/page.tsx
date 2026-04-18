@@ -1416,7 +1416,6 @@ export default function Home() {
                   background: (isSaved || isCurrentSessionSaved) ? (selectionMode === 'manual' ? "rgba(0,0,0,0.1)" : "rgba(217,255,0,0.1)") : (selectionMode === 'manual' ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)"),
                   color: (isSaved || isCurrentSessionSaved) ? (selectionMode === 'manual' ? "black" : "#d9ff00") : (selectionMode === 'manual' ? "rgba(0,0,0,0.4)" : "white"),
                   border: "none",
-                  borderRadius: "50%",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
