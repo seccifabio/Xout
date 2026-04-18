@@ -268,41 +268,57 @@ export default function Home() {
     };
   }, [isTraining, isPaused]);
 
-  const generateSession = () => {
-    const filterFunc = (e: any) => {
-      const passesEquip = noEquip ? !e.requiresEquipment : true;
-      const passesArea = selectedArea === 'All' || (e as any).bodyArea === selectedArea;
-      return passesEquip && passesArea;
-    };
-    
-    const totalCycle = globalDuration + breakTime;
+    const allPool = [
+      ...exercisesData.warmups,
+      ...exercisesData.exercises,
+      ...exercisesData.cooldowns
+    ].filter(e => noEquip ? !e.requiresEquipment : true);
+
     const exerciseCount = Math.min(maxExercises, Math.max(3, Math.floor((selectedTime * 60) / totalCycle)));
     
     // 1. Start with CURRENT FAVORITES (Locked)
     const favExs = favorites.map(name => {
-      const ex = [...exercisesData.warmups, ...exercisesData.exercises, ...exercisesData.cooldowns].find(e => e.name === name);
+      const ex = allPool.find(e => e.name === name);
       return ex ? { ...ex, duration: globalDuration } : null;
     }).filter(Boolean) as Exercise[];
 
-    const finalSession = [...favExs];
+    let finalSession = [...favExs];
 
-    // 2. Fill the rest with random unique ones from the pool
-    const pool = [
-      ...exercisesData.warmups,
-      ...exercisesData.exercises,
-      ...exercisesData.cooldowns
-    ].filter(filterFunc);
+    // 2. Balanced Filler Strategy
+    if (selectedArea === 'All') {
+      const categories = ['Upper', 'Lower', 'Core', 'Abs', 'Full'];
+      let catIndex = Math.floor(Math.random() * categories.length);
+      
+      while (finalSession.length < exerciseCount) {
+        const targetCat = categories[catIndex % categories.length];
+        const catPool = allPool.filter(ex => 
+          (ex.bodyArea === targetCat) && 
+          !finalSession.some(f => f.name === ex.name)
+        );
 
-    const fillers = pool
-      .filter(ex => !finalSession.some(f => f.name === ex.name))
-      .sort(() => Math.random() - 0.5)
-      .slice(0, exerciseCount - finalSession.length);
+        if (catPool.length > 0) {
+          const randomEx = catPool[Math.floor(Math.random() * catPool.length)];
+          finalSession.push({ ...randomEx, duration: globalDuration });
+        }
+        
+        catIndex++;
+        // Safety break if we run out of all unique exercises
+        if (catIndex > 500) break; 
+      }
+    } else {
+      // Specific Area selected: simple random from that area
+      const areaPool = allPool.filter(ex => ex.bodyArea === selectedArea);
+      const fillers = areaPool
+        .filter(ex => !finalSession.some(f => f.name === ex.name))
+        .sort(() => Math.random() - 0.5)
+        .slice(0, exerciseCount - finalSession.length);
+      finalSession = [...finalSession, ...fillers.map(ex => ({ ...ex, duration: globalDuration }))];
+    }
 
-    const randomized = [...finalSession, ...fillers].sort(() => Math.random() - 0.5);
-
-    setSession(randomized.map(ex => ({ ...ex, duration: globalDuration })));
+    const randomized = finalSession.sort(() => Math.random() - 0.5);
+    setSession(randomized);
     // Sync manual Picks state so un-hearting doesn't kill them immediately if we want
-    setManualSession(fillers);
+    setManualSession(randomized.filter(ex => !favorites.includes(ex.name)));
     isTrainingRef.current = false;
     setIsTraining(false);
     setIsPreparing(false);
