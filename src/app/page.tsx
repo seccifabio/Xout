@@ -165,6 +165,9 @@ export default function Home() {
   const [weights, setWeights] = useState<{ date: string, value: number }[]>([]);
   const [isWeightOpen, setIsWeightOpen] = useState(false);
 
+  const wakeLockRef = useRef<any>(null);
+  const dummyOscillatorRef = useRef<any>(null);
+
   // Sync weights with localStorage
   useEffect(() => {
     const saved = localStorage.getItem('xout_weights');
@@ -221,6 +224,41 @@ export default function Home() {
     const color = (isPreparing && prepareTime <= 3) ? "#ff6b00" : (isTraining ? "black" : "#daff00");
     if (meta) meta.setAttribute("content", color);
   }, [isPreparing, prepareTime, isTraining]);
+
+  // WAKE LOCK LOGIC: Ensure screen stays active during training
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+        try {
+          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+        } catch (err) {
+          console.error(`Wake Lock failed: ${err}`);
+        }
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isTraining && !isPaused) {
+        requestWakeLock();
+      }
+    };
+
+    if (isTraining && !isPaused) {
+      requestWakeLock();
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    } else {
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release().then(() => { wakeLockRef.current = null; }).catch(() => {});
+      }
+    }
+
+    return () => {
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release().catch(() => {});
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isTraining, isPaused]);
 
   const generateSession = () => {
     const filterFunc = (e: any) => {
@@ -338,6 +376,23 @@ export default function Home() {
     setTimeLeft(expandedSession[0].duration || globalDuration);
     playIgnitionBeep();
     
+    // START PHANTOM OSCILLATOR: iOS aggressively suspends silent audio contexts.
+    // Driving a silent stream ensures the 3-2-1 timer beeps are never blocked.
+    try {
+      const ctx = initAudio();
+      if (ctx && !dummyOscillatorRef.current) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        gain.gain.value = 0.0001; // Essentially silent
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        dummyOscillatorRef.current = { osc, gain };
+      }
+    } catch (e) {
+      console.error("Phantom audio eng failed", e);
+    }
+
     // iOS Safari Hack: Fire a silent utterance immediately to tether the Speech queue to the user interaction
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       const silentUtterance = new SpeechSynthesisUtterance("");
@@ -355,6 +410,17 @@ export default function Home() {
     setIsTraining(false);
     setIsPreparing(false);
     isTrainingRef.current = false;
+    
+    // Shut down the Phantom Stream
+    if (dummyOscillatorRef.current) {
+      try {
+        dummyOscillatorRef.current.osc.stop();
+        dummyOscillatorRef.current.osc.disconnect();
+        dummyOscillatorRef.current.gain.disconnect();
+      } catch (e) {}
+      dummyOscillatorRef.current = null;
+    }
+    
     setTrainingSession([]);
     setCurrentIndex(0);
     setPrepareTime(10);
