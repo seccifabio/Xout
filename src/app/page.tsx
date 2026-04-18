@@ -1124,7 +1124,16 @@ export default function Home() {
                   {ex.name}
                 </h3>
                 
-                {/* Information hidden under title */}
+                <p style={{ 
+                  fontSize: "0.9rem", 
+                  opacity: 0.5, 
+                  lineHeight: "1.5",
+                  marginTop: "0.5rem",
+                  marginBottom: "1.5rem",
+                  color: selectionMode === 'manual' ? "black" : "white"
+                }}>
+                  {ex.desc}
+                </p>
                 
 
 
