@@ -58,7 +58,22 @@
     { "id": "e46", "name": "Knee-to-Elbows", "reps": "10 Each", "highImpact": false, "requiresEquipment": false, "desc": "Lying on back, crunch up and touch knee to opposite elbow.", "bodyArea": "Abs" },
     { "id": "e47", "name": "Up & Down Plank", "reps": "10", "highImpact": false, "requiresEquipment": false, "desc": "Transition from forearm plank to high plank and back.", "bodyArea": "Abs" },
     { "id": "e48", "name": "Bicycle Crunches", "reps": "20", "highImpact": false, "requiresEquipment": false, "desc": "Pedal legs while touching opposite elbow to knee.", "bodyArea": "Abs" },
-    { "id": "e49", "name": "Hundred", "reps": "100", "highImpact": false, "requiresEquipment": false, "desc": "Pilates hundred: hold hollow body and pump arms.", "bodyArea": "Abs" }
+    { "id": "e49", "name": "Hundred", "reps": "100", "highImpact": false, "requiresEquipment": false, "desc": "Pilates hundred: hold hollow body and pump arms.", "bodyArea": "Abs" },
+    { "id": "e50", "name": "Reverse Crunches", "reps": "15", "highImpact": false, "requiresEquipment": false, "desc": "Lying on back, bring knees toward chest, lifting hips off floor.", "bodyArea": "Abs" },
+    { "id": "e51", "name": "Half Wipers", "reps": "10 Each Side", "highImpact": false, "requiresEquipment": false, "desc": "Lying on back, knees bent at 90 deg, drop knees slowly side to side.", "bodyArea": "Abs" },
+    { "id": "e52", "name": "High Crunches", "reps": "15", "highImpact": false, "requiresEquipment": false, "desc": "Crunch with arms extended vertically toward the ceiling.", "bodyArea": "Abs" },
+    { "id": "e53", "name": "Scissors", "reps": "30", "highImpact": false, "requiresEquipment": false, "desc": "Lying on back, alternate crossing feet over each other horizontally.", "bodyArea": "Abs" },
+    { "id": "e54", "name": "Elbow Plank", "reps": "30-60 Sec", "highImpact": false, "requiresEquipment": false, "desc": "Hold a stable plank position on your forearms.", "bodyArea": "Abs" },
+    { "id": "e55", "name": "Cross Crunches", "reps": "10 Each Side", "highImpact": false, "requiresEquipment": false, "desc": "Crunch while bringing opposite elbow toward opposite knee.", "bodyArea": "Abs" },
+    { "id": "e56", "name": "Side Jack-Knives", "reps": "10 Each Side", "highImpact": false, "requiresEquipment": false, "desc": "Lying on side, bring arm and leg together in a folding motion.", "bodyArea": "Abs" },
+    { "id": "e57", "name": "Wipers", "reps": "10 Each Side", "highImpact": false, "requiresEquipment": false, "desc": "Lying on back, legs straight, drop them side to side like windshield wipers.", "bodyArea": "Abs" },
+    { "id": "e58", "name": "Long Arm Crunches", "reps": "15", "highImpact": false, "requiresEquipment": false, "desc": "Crunch with arms extended overhead behind you for increased leverage.", "bodyArea": "Abs" },
+    { "id": "e59", "name": "Pulse-ups", "reps": "15", "highImpact": false, "requiresEquipment": false, "desc": "Lying on back, legs straight up, pulse hips toward the ceiling.", "bodyArea": "Abs" },
+    { "id": "e60", "name": "Star Plank", "reps": "30 Sec", "highImpact": false, "requiresEquipment": false, "desc": "High plank with hands and feet spread wide like a star.", "bodyArea": "Abs" },
+    { "id": "e61", "name": "Plank Rolls", "reps": "10 Each Side", "highImpact": false, "requiresEquipment": false, "desc": "Transition from plank to side plank and back in a rolling motion.", "bodyArea": "Abs" },
+    { "id": "e62", "name": "Sitting Punches", "reps": "30", "highImpact": false, "requiresEquipment": false, "desc": "In a V-sit position, throw alternating shadow punches.", "bodyArea": "Abs" },
+    { "id": "e63", "name": "Side Plank Crunches", "reps": "10 Each Side", "highImpact": false, "requiresEquipment": false, "desc": "From side plank, bring top elbow and knee together.", "bodyArea": "Abs" },
+    { "id": "e64", "name": "V-ups", "reps": "12", "highImpact": false, "requiresEquipment": false, "desc": "Simultaneously lift torso and legs to meet in a V shape.", "bodyArea": "Abs" }
   ],
   "cooldowns": [
     { "id": "c1", "name": "Hip Abduction", "reps": "10 Each", "highImpact": false, "requiresEquipment": false, "desc": "Slow controlled leg lift to the side.", "bodyArea": "Lower" },

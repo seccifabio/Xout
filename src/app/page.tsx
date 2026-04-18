@@ -268,6 +268,8 @@ export default function Home() {
     };
   }, [isTraining, isPaused]);
 
+  const generateSession = () => {
+    const totalCycle = (globalDuration || 45) + (breakTime || 0);
     const allPool = [
       ...exercisesData.warmups,
       ...exercisesData.exercises,
@@ -276,33 +278,40 @@ export default function Home() {
 
     const exerciseCount = Math.min(maxExercises, Math.max(3, Math.floor((selectedTime * 60) / totalCycle)));
     
-    // 1. Start with CURRENT FAVORITES (Locked)
-    const favExs = favorites.map(name => {
-      const ex = allPool.find(e => e.name === name);
-      return ex ? { ...ex, duration: globalDuration } : null;
-    }).filter(Boolean) as Exercise[];
-
-    let finalSession = [...favExs];
+    // 1. Start fresh for true balance flow
+    let finalSession: Exercise[] = [];
 
     // 2. Balanced Filler Strategy
     if (selectedArea === 'All') {
-      const categories = ['Upper', 'Lower', 'Core', 'Abs', 'Full'];
+      const categories = ['Upper', 'Lower', 'Midsection', 'Full'];
       let catIndex = Math.floor(Math.random() * categories.length);
       
-      while (finalSession.length < exerciseCount) {
+      const sessionGoal = exerciseCount;
+      
+      while (finalSession.length < sessionGoal) {
         const targetCat = categories[catIndex % categories.length];
-        const catPool = allPool.filter(ex => 
-          (ex.bodyArea === targetCat) && 
-          !finalSession.some(f => f.name === ex.name)
-        );
+        
+        // Find pool for this category with robust case-insensitive matching
+        const catPool = allPool.filter(ex => {
+          const area = (ex.bodyArea || "").trim();
+          if (targetCat === 'Midsection') return (area === 'Core' || area === 'Abs');
+          return area === targetCat;
+        }).filter(ex => !finalSession.some(f => f.name === ex.name));
 
         if (catPool.length > 0) {
-          const randomEx = catPool[Math.floor(Math.random() * catPool.length)];
+          // Check if we have favorites in this specific category bucket
+          const catFavs = catPool.filter(ex => favorites.includes(ex.name));
+          
+          // 50% chance to pick a favorite if one exists for this category, otherwise random
+          const useFav = catFavs.length > 0 && Math.random() > 0.5;
+          const randomEx = useFav 
+            ? catFavs[Math.floor(Math.random() * catFavs.length)]
+            : catPool[Math.floor(Math.random() * catPool.length)];
+            
           finalSession.push({ ...randomEx, duration: globalDuration });
         }
         
         catIndex++;
-        // Safety break if we run out of all unique exercises
         if (catIndex > 500) break; 
       }
     } else {
@@ -592,6 +601,7 @@ export default function Home() {
             onClick={() => {
               setSelectionMode('surprise');
               clearSession();
+              setSelectedArea('All');
               setSearchQuery("");
             }}
             style={{ 
@@ -912,18 +922,19 @@ export default function Home() {
                   style={{
                     background: "white",
                     border: "none",
-                    width: "30px",
-                    height: "30px",
+                    width: "40px",
+                    height: "40px",
                     borderRadius: "50%",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
                     color: "black",
-                    fontSize: "0.9rem",
+                    fontSize: "1.5rem",
                     fontWeight: "900",
                     flexShrink: 0,
-                    marginRight: "0.5rem"
+                    marginRight: "0.5rem",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
                   }}
                 >
                   ✕
@@ -971,8 +982,8 @@ export default function Home() {
                       background: selectedArea === area ? "black" : (selectionMode === 'manual' ? "rgba(0,0,0,0.06)" : "rgba(0,0,0,0.12)"),
                       color: selectedArea === area ? currentAccent : (selectionMode === 'manual' ? "black" : "rgba(0,0,0,0.65)"),
                       border: "none",
-                      padding: "0.8rem 1.6rem",
-                      fontSize: "0.85rem",
+                      padding: "1rem 2.2rem",
+                      fontSize: "0.9rem",
                       fontWeight: "900",
                       borderRadius: "100px",
                       cursor: "pointer",
@@ -1026,7 +1037,7 @@ export default function Home() {
 
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.5rem", width: "100%" }}>
                 <button 
-                  onClick={generateSession}
+                  onClick={() => { setSelectedArea('All'); generateSession(); }}
                   className="button button-shiny"
                   style={{
                     background: currentAccent,
@@ -1155,7 +1166,8 @@ export default function Home() {
                   lineHeight: "1.5",
                   marginTop: "0.5rem",
                   marginBottom: "1.5rem",
-                  color: selectionMode === 'manual' ? "black" : "white"
+                  color: selectionMode === 'manual' ? "black" : "white",
+                  paddingRight: selectionMode === 'surprise' ? "4.5rem" : "0" // Avoid clash with swap icon
                 }}>
                   {ex.desc}
                 </p>
@@ -1361,9 +1373,17 @@ export default function Home() {
                       }}>
                         {String(idx + 1).padStart(2, '0')}
                       </span>
-                      <div style={{ display: "flex", flexDirection: "column" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
                         <span style={{ fontWeight: "900", fontSize: "1rem", textTransform: "uppercase" }}>{ex.name}</span>
-                        <span style={{ fontSize: "0.7rem", opacity: 0.5, fontWeight: "700" }}>{ex.reps} • {ex.duration}S</span>
+                        <span style={{ 
+                          fontSize: "0.75rem", 
+                          opacity: 0.6, 
+                          fontWeight: "500", 
+                          lineHeight: "1.3",
+                          paddingRight: "1rem" 
+                        }}>
+                          {ex.desc}
+                        </span>
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
