@@ -43,6 +43,18 @@ export default function Home() {
     setTimeout(() => setToastMessage(null), 2500);
   };
 
+  const renameRitual = (idx: number) => {
+    const currentName = savedRituals[idx].name || "";
+    const newName = prompt("Enter a custom name for this workout ritual:", currentName);
+    if (newName !== null) {
+      const next = [...savedRituals];
+      next[idx] = { ...next[idx], name: newName };
+      localStorage.setItem('xout_saved_workouts', JSON.stringify(next));
+      setSavedRituals(next);
+      triggerToast("Ritual Renamed");
+    }
+  };
+
   const isLoaded = useRef(false);
 
   useEffect(() => {
@@ -126,6 +138,16 @@ export default function Home() {
           setSession(current => [...current, { ...ex, duration: globalDuration }]);
         }
       }
+      return next;
+    });
+  };
+
+  const moveExercise = (index: number, direction: 'up' | 'down') => {
+    setSession(prev => {
+      const next = [...prev];
+      const target = direction === 'up' ? index - 1 : index + 1;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
       return next;
     });
   };
@@ -1509,14 +1531,36 @@ export default function Home() {
                         )}
                       </div>
                     </div>
-                    <button 
-                      onClick={() => removeFromSession(ex.id)}
-                      style={{ background: "none", border: "none", color: "rgba(0,0,0,0.3)", padding: "10px", cursor: "pointer" }}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                      </svg>
-                    </button>
+                    <div style={{ display: "flex", gap: "0.25rem", alignItems: "center" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <button 
+                          onClick={() => moveExercise(i, 'up')}
+                          disabled={i === 0}
+                          style={{ background: "none", border: "none", color: "black", opacity: i === 0 ? 0.1 : 0.4, cursor: "pointer", padding: "4px" }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                          </svg>
+                        </button>
+                        <button 
+                          onClick={() => moveExercise(i, 'down')}
+                          disabled={i === session.length - 1}
+                          style={{ background: "none", border: "none", color: "black", opacity: i === session.length - 1 ? 0.1 : 0.4, cursor: "pointer", padding: "4px" }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </button>
+                      </div>
+                      <button 
+                        onClick={() => removeFromSession(ex.id)}
+                        style={{ background: "none", border: "none", color: "rgba(0,0,0,0.3)", padding: "10px", cursor: "pointer" }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2467,7 +2511,7 @@ export default function Home() {
             justifyContent: "space-between",
             alignItems: "center"
           }}>
-            <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "0.15em", color: "white", margin: 0 }}>WORKOUT</h2>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "0.15em", color: "white", margin: 0 }}>YOUR WORKOUT</h2>
             <button 
               onClick={() => setIsLibraryOpen(false)}
               style={{ background: "none", border: "none", color: "white", fontSize: "1.5rem", fontWeight: "300", cursor: "pointer", opacity: 0.5 }}
@@ -2476,7 +2520,7 @@ export default function Home() {
             </button>
           </header>
 
-          <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }} className="no-scrollbar">
+          <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem 0", display: "flex", flexDirection: "column", gap: "1rem" }} className="no-scrollbar">
             {hasHydrated && (() => {
               if (savedRituals.length === 0) {
                 return (
@@ -2493,34 +2537,55 @@ export default function Home() {
                   key={workout.id || idx}
                   style={{
                     background: "rgba(255,255,255,0.03)",
-                    padding: "1.5rem",
-                    borderRadius: "1.5rem",
+                    padding: "2rem 1.5rem",
+                    borderRadius: "0",
                     display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center"
+                    flexDirection: "column",
+                    gap: "1.5rem",
+                    borderBottom: "1px solid rgba(255,255,255,0.05)"
                   }}
                 >
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: "0.6rem", fontWeight: "900", color: "var(--accent)", opacity: 0.6, letterSpacing: "0.1em", marginBottom: "0.4rem" }}>
-                      {workout.date?.toUpperCase() || 'HISTORICAL WORKOUT'}
+                  <div style={{ flex: 1, cursor: "pointer" }} onClick={() => renameRitual(idx)}>
+                    <div style={{ fontSize: "0.6rem", fontWeight: "900", color: "var(--accent)", opacity: 0.6, letterSpacing: "0.2em", marginBottom: "0.5rem" }}>
+                      {workout.name ? workout.date?.toUpperCase() : 'HISTORICAL RITUAL'}
                     </div>
-                    <div style={{ fontSize: "1.2rem", fontWeight: "900", color: "white", marginBottom: "0.2rem", letterSpacing: "-0.02em" }}>
-                      {workout.exercises.length} MOVEMENTS
+                    <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "white", marginBottom: "0.4rem", letterSpacing: "-0.04em", lineHeight: 1 }}>
+                      {workout.name || workout.date?.toUpperCase() || 'UNTITLED'}
                     </div>
-                    <div style={{ fontSize: "0.7rem", fontWeight: "700", opacity: 0.4, letterSpacing: "0.05em" }}>
-                      {workout.duration} MIN DURATION
+                    <div style={{ fontSize: "0.8rem", fontWeight: "700", opacity: 0.4, letterSpacing: "0.05em" }}>
+                      {workout.exercises.length} MOVEMENTS • {workout.duration} MIN
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+
+                  <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "1.5rem" }}>
+                    <button 
+                      onClick={() => renameRitual(idx)}
+                      style={{ 
+                        background: "rgba(255,255,255,0.05)", 
+                        border: "1px solid rgba(255,255,255,0.1)", 
+                        color: "white", 
+                        width: "50px", 
+                        height: "50px", 
+                        borderRadius: "50%", 
+                        cursor: "pointer", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center" 
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                      </svg>
+                    </button>
                     <button 
                       onClick={() => {
                         const next = savedRituals.filter((_: any, i: number) => i !== idx);
                         localStorage.setItem('xout_saved_workouts', JSON.stringify(next));
                         setSavedRituals(next);
                       }}
-                      style={{ background: "rgba(255,0,0,0.1)", border: "none", color: "#ff4444", width: "40px", height: "40px", borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      style={{ background: "rgba(255,0,0,0.1)", border: "none", color: "#ff4444", width: "50px", height: "50px", borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                     >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                       </svg>
                     </button>
@@ -2537,18 +2602,19 @@ export default function Home() {
                         setIsTrayExpanded(true);
                       }}
                       style={{
+                        flex: 1,
                         background: "var(--accent)",
                         color: "black",
                         border: "none",
-                        padding: "0.8rem 1.2rem",
+                        height: "50px",
                         borderRadius: "100px",
-                        fontSize: "0.7rem",
+                        fontSize: "0.8rem",
                         fontWeight: "900",
                         cursor: "pointer",
-                        letterSpacing: "0.05em"
+                        letterSpacing: "0.1em"
                       }}
                     >
-                      GET READY
+                      ACTIVATE RITUAL
                     </button>
                   </div>
                 </div>
