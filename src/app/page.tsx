@@ -1193,7 +1193,7 @@ export default function Home() {
                     color: "black",
                     padding: "1.2rem 1.5rem",
                     borderRadius: "100px",
-                    fontSize: "1.2rem",
+                    fontSize: "1.1rem",
                     fontWeight: "900",
                     letterSpacing: "0.1em",
                     border: "none",
@@ -1201,7 +1201,7 @@ export default function Home() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "1rem"
+                    gap: "0.6rem"
                   }}
                 >
                   <svg fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style={{ width: "44px", height: "44px" }}>
