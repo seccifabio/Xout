@@ -2559,7 +2559,7 @@ export default function Home() {
 
       {toastMessage && (
         <div className="toast">
-          {toastMessage.includes("FAVORITES") || toastMessage.includes("SAVED") ? (
+          {toastMessage.toUpperCase().includes("FAVORITES") || toastMessage.toUpperCase().includes("SAVED") || toastMessage.toUpperCase().includes("LIBRARY") ? (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
