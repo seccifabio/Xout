@@ -1191,7 +1191,7 @@ export default function Home() {
                   style={{
                     background: currentAccent,
                     color: "black",
-                    padding: "1.2rem 3rem",
+                    padding: "1.2rem 1.5rem",
                     borderRadius: "100px",
                     fontSize: "1.2rem",
                     fontWeight: "900",
