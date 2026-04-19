@@ -1173,12 +1173,13 @@ export default function Home() {
               paddingTop: "3.5rem"
             }} className="animate">
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <h2 style={{ fontSize: "3.5rem", fontWeight: "900", letterSpacing: "-0.05em", lineHeight: "1", margin: 0 }}>
-                  Skip the excuses. <br/> Not the workout.
+                <h2 style={{ fontSize: "3.5rem", fontWeight: "900", letterSpacing: "-0.05em", lineHeight: "1.05", margin: 0 }}>
+                  <span style={{ fontSize: "2.4rem", color: "rgba(255,255,255,0.4)", display: "block", marginBottom: "0.2rem" }}>Skip the excuses.</span>
+                  Not the workout.
                 </h2>
-                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center" }}>
+                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginTop: "0.5rem" }}>
                   {noEquip && (
-                    <span style={{ fontSize: "0.6rem", background: "rgba(255,255,255,0.1)", padding: "0.3rem 0.8rem", borderRadius: "100px", fontWeight: "900" }}>BODYWEIGHT ONLY</span>
+                    <span style={{ fontSize: "0.8rem", background: "rgba(255,255,255,0.1)", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>BODYWEIGHT ONLY</span>
                   )}
                 </div>
               </div>
