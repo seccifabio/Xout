@@ -36,7 +36,13 @@ export default function Home() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [savedRituals, setSavedRituals] = useState<any[]>([]);
-  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
   const isLoaded = useRef(false);
 
   useEffect(() => {
@@ -375,13 +381,8 @@ export default function Home() {
     // Update State functional update
     setSavedRituals(prev => [workoutToSave, ...prev]);
     setIsSaved(true);
-    
-    // Premium Toast Ritual
-    setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-      setIsSaved(false);
-    }, 3000);
+    triggerToast("Workout Saved to Library");
+    setTimeout(() => setIsSaved(false), 3000);
   };
 
   const isCurrentSessionSaved = useMemo(() => {
@@ -1825,7 +1826,11 @@ export default function Home() {
                 </button>
               ) : (
                 <button 
-                  onClick={() => setIsVoiceMuted(!isVoiceMuted)}
+                  onClick={() => {
+                    const nextMute = !isVoiceMuted;
+                    setIsVoiceMuted(nextMute);
+                    triggerToast(nextMute ? "VOICE: SILENCED" : "VOICE: ACTIVATED");
+                  }}
                   style={{
                     width: "56px", 
                     height: "56px", 
@@ -2552,12 +2557,19 @@ export default function Home() {
           </div>
       </div>
 
-      {showToast && (
+      {toastMessage && (
         <div className="toast">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-          Workout Saved to Favorites
+          {toastMessage.includes("FAVORITES") || toastMessage.includes("SAVED") ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+            </svg>
+          )}
+          {toastMessage}
         </div>
       )}
     </>
