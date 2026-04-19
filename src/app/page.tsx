@@ -36,6 +36,7 @@ export default function Home() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [savedRituals, setSavedRituals] = useState<any[]>([]);
+  const [bgIndex, setBgIndex] = useState(1);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   
   const triggerToast = (msg: string) => {
@@ -59,8 +60,8 @@ export default function Home() {
 
   useEffect(() => {
     setHasHydrated(true);
-    const saved = localStorage.getItem('xout_saved_workouts');
-    if (saved) setSavedRituals(JSON.parse(saved));
+    const storedRituals = localStorage.getItem('xout_saved_workouts');
+    if (storedRituals) setSavedRituals(JSON.parse(storedRituals));
 
     // PREVIEW RITUAL: Jump straight to post-workout states
     const params = new URLSearchParams(window.location.search);
@@ -723,9 +724,23 @@ export default function Home() {
 
   const isDefaultPage = selectionMode === 'surprise' && !isTraining && !isPreparing && session.length === 0;
 
+  useEffect(() => {
+    if (isDefaultPage) {
+      setBgIndex(Math.floor(Math.random() * 3) + 1);
+    }
+  }, [isDefaultPage]);
+
   return (
     <>
-      {isDefaultPage && <div className="bg-animated" />}
+      {isDefaultPage && (
+        <div 
+          className="bg-animated" 
+          style={{ 
+            backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/Background_${bgIndex}.png')`,
+            backgroundPosition: "right center"
+          }} 
+        />
+      )}
       <main style={{ 
         height: (isTraining || isPreparing) ? "100dvh" : "100%", 
         width: "100%",
@@ -762,57 +777,49 @@ export default function Home() {
           </h1>
 
           <div style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
-            <div style={{ 
-              display: "flex", 
-              background: selectionMode === 'manual' ? "black" : "rgba(255,255,255,0.05)", 
-              padding: "0.3rem",
-              borderRadius: "999px",
-              border: selectionMode === 'manual' ? "0.5px solid black" : "none"
-            }}>
-              <button
-                onClick={() => {
-                  const nextMode = selectionMode === 'surprise' ? 'manual' : 'surprise';
-                  setSelectionMode(nextMode);
-                  clearSession();
-                }}
-                style={{
-                  width: "56px",
-                  height: "56px",
-                  background: selectionMode === 'manual' ? "black" : "#333",
-                  color: selectionMode === 'manual' ? "#daff00" : "var(--accent)",
-                  border: "none",
-                  borderRadius: "50%",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                {selectionMode === 'surprise' ? (
-                  <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "28px", height: "28px" }}>
-                    <path d="M40.5,5.5H7.5a2,2,0,0,0-2,2v33a2,2,0,0,0,2,2h33a2,2,0,0,0,2-2V7.5A2,2,0,0,0,40.5,5.5Z" />
-                    <path d="M24,5.5v37" />
-                    <line x1="24" y1="17" x2="42.5" y2="17" />
-                    <line x1="24" y1="31" x2="5.5" y2="31" />
-                  </svg>
-                ) : (
-                  <svg fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style={{ width: "34px", height: "34px" }}>
-                    <g fillRule="evenodd">
-                      <path d="M24.898 100.907a7.97 7.97 0 0 1 8.035-7.935l80.011.623c4.419.034 8.209 3.635 8.466 8.042l.517 8.868 26.68-42.392a7.776 7.776 0 0 1 10.94-2.349l66.996 44.369a8.03 8.03 0 0 1 2.275 11.113l-43.766 66.506c-2.432 3.695-7.447 4.8-11.197 2.47l-51.928-32.265v26.49c0 4.419-3.583 8-7.993 8H32.498a7.949 7.949 0 0 1-7.959-7.998l.36-83.542zm11.828 6.694l-.189 71.811 74.127.073-.035-29.78-5.954-4.119c-1.809-1.25-2.375-3.81-1.257-5.71L111 127l-.466-19.749-73.808.35zM156.483 79L118 138.79l60.965 38.32 37.612-58.539L156.483 79z" />
-                      <circle cx="138" cy="135" r="8" />
-                      <circle cx="165" cy="130" r="8" />
-                      <circle cx="193" cy="125" r="8" />
-                      <circle cx="50" cy="124" r="8" />
-                      <circle cx="73" cy="145" r="8" />
-                      <circle cx="95" cy="123" r="8" />
-                      <circle cx="51" cy="165" r="8" />
-                      <circle cx="95" cy="165" r="8" />
-                    </g>
-                  </svg>
-                )}
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                const nextMode = selectionMode === 'surprise' ? 'manual' : 'surprise';
+                setSelectionMode(nextMode);
+                clearSession();
+              }}
+              style={{
+                width: "56px",
+                height: "56px",
+                background: selectionMode === 'manual' ? "black" : "rgba(255,255,255,0.05)",
+                color: selectionMode === 'manual' ? "#daff00" : "var(--accent)",
+                border: selectionMode === 'manual' ? "0.5px solid black" : "none",
+                borderRadius: "50%",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              {selectionMode === 'surprise' ? (
+                <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: "28px", height: "28px" }}>
+                  <path d="M40.5,5.5H7.5a2,2,0,0,0-2,2v33a2,2,0,0,0,2,2h33a2,2,0,0,0,2-2V7.5A2,2,0,0,0,40.5,5.5Z" />
+                  <path d="M24,5.5v37" />
+                  <line x1="24" y1="17" x2="42.5" y2="17" />
+                  <line x1="24" y1="31" x2="5.5" y2="31" />
+                </svg>
+              ) : (
+                <svg fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style={{ width: "34px", height: "34px" }}>
+                  <g fillRule="evenodd">
+                    <path d="M24.898 100.907a7.97 7.97 0 0 1 8.035-7.935l80.011.623c4.419.034 8.209 3.635 8.466 8.042l.517 8.868 26.68-42.392a7.776 7.776 0 0 1 10.94-2.349l66.996 44.369a8.03 8.03 0 0 1 2.275 11.113l-43.766 66.506c-2.432 3.695-7.447 4.8-11.197 2.47l-51.928-32.265v26.49c0 4.419-3.583 8-7.993 8H32.498a7.949 7.949 0 0 1-7.959-7.998l.36-83.542zm11.828 6.694l-.189 71.811 74.127.073-.035-29.78-5.954-4.119c-1.809-1.25-2.375-3.81-1.257-5.71L111 127l-.466-19.749-73.808.35zM156.483 79L118 138.79l60.965 38.32 37.612-58.539L156.483 79z" />
+                    <circle cx="138" cy="135" r="8" />
+                    <circle cx="165" cy="130" r="8" />
+                    <circle cx="193" cy="125" r="8" />
+                    <circle cx="50" cy="124" r="8" />
+                    <circle cx="73" cy="145" r="8" />
+                    <circle cx="95" cy="123" r="8" />
+                    <circle cx="51" cy="165" r="8" />
+                    <circle cx="95" cy="165" r="8" />
+                  </g>
+                </svg>
+              )}
+            </button>
 
             <button 
               onClick={() => setIsOptionsOpen(true)}
@@ -1170,11 +1177,11 @@ export default function Home() {
               flex: 1,
               gap: "2.5rem",
               textAlign: "center",
-              paddingTop: "3.5rem"
+              paddingTop: "6rem"
             }} className="animate">
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <h2 style={{ fontSize: "3.5rem", fontWeight: "900", letterSpacing: "-0.05em", lineHeight: "1.05", margin: 0 }}>
-                  <span style={{ fontSize: "2.4rem", color: "rgba(255,255,255,0.4)", display: "block", marginBottom: "0.2rem" }}>Skip the excuses.</span>
+                  <span style={{ fontSize: "2.4rem", color: "rgba(255,255,255,0.2)", display: "block", marginBottom: "0.2rem" }}>Skip the excuses.</span>
                   Not the workout.
                 </h2>
                 <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginTop: "0.5rem" }}>
@@ -1193,7 +1200,7 @@ export default function Home() {
                     color: "black",
                     padding: "1.2rem 1.5rem",
                     borderRadius: "100px",
-                    fontSize: "1.1rem",
+                    fontSize: "0.9rem",
                     fontWeight: "900",
                     letterSpacing: "0.1em",
                     border: "none",
