@@ -1836,13 +1836,13 @@ export default function Home() {
                     height: "56px", 
                     borderRadius: "50%", 
                     background: (isPreparing && prepareTime <= 3) 
-                      ? "black" 
+                      ? (isVoiceMuted ? "none" : "black") 
                       : (isVoiceMuted ? "rgba(255,255,255,0.1)" : "white"),
                     border: (isPreparing && prepareTime <= 3)
-                      ? "none"
+                      ? (isVoiceMuted ? "1px solid rgba(0,0,0,0.15)" : "none")
                       : (isVoiceMuted ? "1px solid rgba(255,255,255,0.2)" : "none"),
                     color: (isPreparing && prepareTime <= 3) 
-                      ? (isWarmup ? "#ff6b00" : "var(--accent)") 
+                      ? (isVoiceMuted ? "black" : (isWarmup ? "#ff6b00" : "var(--accent)")) 
                       : (isVoiceMuted ? "white" : "black"),
                     display: "flex",
                     alignItems: "center",
@@ -1851,7 +1851,7 @@ export default function Home() {
                     boxShadow: (isPreparing && prepareTime <= 3) 
                       ? "none" 
                       : (isVoiceMuted ? "none" : "0 10px 30px rgba(0,0,0,0.2)"),
-                    opacity: (isPreparing && prepareTime <= 3) ? 1 : (isVoiceMuted ? 0.5 : 1),
+                    opacity: 1,
                     transition: "all 0.2s"
                   }}
                 >
