@@ -1071,6 +1071,7 @@ export default function Home() {
         )}
 
       {!(isTraining || isPreparing) ? (
+        <React.Fragment>
           <section 
           className={`session-list ${selectionMode === 'manual' ? 'animate-up' : ''}`} 
           style={{ 
@@ -1311,8 +1312,10 @@ export default function Home() {
               </div>
             );
           })}
+        </section>
           
-        {session.length > 0 && !(isTraining || isPreparing) && (
+        {(session.length > 0 || manualSession.length > 0) && !(isTraining || isPreparing) && (
+          <React.Fragment>
           <div style={{ 
             position: "fixed", 
             bottom: "0", 
@@ -1412,158 +1415,73 @@ export default function Home() {
                     background: "black", 
                     color: "#daff00", 
                     border: "none", 
-                    width: "56px", 
-                    height: "56px", 
+                    width: "40px", 
+                    height: "40px", 
                     borderRadius: "50%", 
                     display: "flex", 
                     alignItems: "center", 
-                    justifyContent: "center",
-                    cursor: "pointer"
+                    justifyContent: "center", 
+                    cursor: "pointer",
+                    fontSize: "1.2rem",
+                    fontWeight: "900"
                   }}
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
+                  ✕
                 </button>
               </div>
 
-              {/* Tray List Content */}
-              <div style={{
-                flex: 1,
-                overflowY: "auto",
-                padding: "1.5rem",
-                display: "flex",
-                flexDirection: "column",
-                gap: "1rem"
-              }}>
-                {session.map((ex, idx) => (
-                  <div key={`${ex.id}-${idx}`} style={{ 
+              {/* Tray List */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem" }} className="no-scrollbar">
+                {session.map((ex, i) => (
+                  <div key={`${ex.id}-tray-${i}`} style={{ 
                     display: "flex", 
                     justifyContent: "space-between", 
-                    alignItems: "center",
-                    padding: "1.2rem 1.5rem",
-                    background: "rgba(0,0,0,0.05)",
-                    borderRadius: "1.5rem",
-                    border: "1px solid rgba(0,0,0,0.05)"
+                    alignItems: "center", 
+                    padding: "1.2rem 0", 
+                    borderBottom: "1px solid rgba(0,0,0,0.05)" 
                   }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "1.2rem" }}>
-                      <span style={{ 
-                        fontSize: "0.8rem", 
-                        fontWeight: "900", 
-                        opacity: 0.3,
-                        fontFamily: "monospace"
-                      }}>
-                        {String(idx + 1).padStart(2, '0')}
-                      </span>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                          <span style={{ 
-                            fontSize: "0.6rem", 
-                            fontWeight: "900", 
-                            color: "black", 
-                            opacity: 0.4,
-                            textTransform: "uppercase"
-                          }}>
-                            {ex.id.startsWith('w') ? 'WARMUP' : ex.id.startsWith('c') ? 'COOLDOWN' : (ex as any).bodyArea || 'EXERCISE'}
-                          </span>
-                          {favorites.includes(ex.name) && (
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.3 }}>
-                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                            </svg>
-                          )}
-                        </div>
-                        <span style={{ fontWeight: "900", fontSize: "1rem", textTransform: "uppercase" }}>{ex.name}</span>
-                        <span style={{ 
-                          fontSize: "0.75rem", 
-                          opacity: 0.6, 
-                          fontWeight: "500", 
-                          lineHeight: "1.3",
-                          paddingRight: "1rem" 
-                        }}>
-                          {ex.desc}
-                        </span>
+                    <div>
+                      <div style={{ fontSize: "0.6rem", fontWeight: "900", opacity: 0.5, letterSpacing: "0.1em" }}>{String(i + 1).padStart(2, '0')}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <div style={{ fontSize: "1.1rem", fontWeight: "900" }}>{ex.name}</div>
+                        {favorites.includes(ex.name) && (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.3 }}>
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                          </svg>
+                        )}
                       </div>
                     </div>
-                      <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <button 
-                            onClick={() => {
-                              if (idx === 0) return;
-                              const newSession = [...session];
-                              [newSession[idx - 1], newSession[idx]] = [newSession[idx], newSession[idx - 1]];
-                              setSession(newSession);
-                            }}
-                            style={{ background: "none", border: "none", padding: "2px", cursor: idx === 0 ? "default" : "pointer", color: "black", opacity: idx === 0 ? 0.05 : 0.3 }}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-                          </button>
-                          <button 
-                            onClick={() => {
-                              if (idx === session.length - 1) return;
-                              const newSession = [...session];
-                              [newSession[idx + 1], newSession[idx]] = [newSession[idx], newSession[idx + 1]];
-                              setSession(newSession);
-                            }}
-                            style={{ background: "none", border: "none", padding: "2px", cursor: idx === session.length - 1 ? "default" : "pointer", color: "black", opacity: idx === session.length - 1 ? 0.05 : 0.3 }}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                          </button>
-                        </div>
-                        <button 
-                          onClick={() => setSession(prev => prev.filter((_, i) => i !== idx))}
-                          style={{ 
-                            background: "rgba(0,0,0,0.08)",
-                            border: "none",
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "50%",
-                            cursor: "pointer",
-                            color: "black",
-                            display: "flex", 
-                            alignItems: "center", 
-                            justifyContent: "center",
-                            transition: "all 0.2s"
-                          }}
-                        >
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                          </svg>
-                        </button>
-                      </div>
+                    <button 
+                      onClick={() => removeFromSession(ex.id)}
+                      style={{ background: "none", border: "none", color: "rgba(0,0,0,0.3)", padding: "10px", cursor: "pointer" }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>
 
-              {/* TRAY ACTION BUTTON */}
-              <div style={{ 
-                padding: "1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom))", 
-                background: "rgba(218, 255, 0, 0.1)",
-                borderTop: "1px solid rgba(0,0,0,0.05)",
-                display: "flex",
-                justifyContent: "center"
-              }}>
+              {/* Tray Footer */}
+              <div style={{ padding: "2rem 1.5rem 4rem 1.5rem", borderTop: "1px solid rgba(0,0,0,0.1)", background: "#daff00" }}>
                 <button 
-                  onClick={() => {
-                    setIsTrayExpanded(false);
-                    startSession();
-                  }}
+                  onClick={() => { setIsTrayExpanded(false); startSession(); }}
                   style={{
                     background: "black",
                     color: "#daff00",
                     border: "none",
                     width: "100%",
-                    maxWidth: "280px",
                     padding: "1.2rem",
                     borderRadius: "100px",
                     fontSize: "1.2rem",
                     fontWeight: "900",
-                    letterSpacing: "0.2em",
+                    letterSpacing: "0.1em",
                     cursor: "pointer",
                     boxShadow: "0 10px 30px rgba(0,0,0,0.15)"
                   }}
                 >
-                  GO
+                  START SESSION
                 </button>
               </div>
             </div>
@@ -1667,8 +1585,9 @@ export default function Home() {
               )}
             </div>
           </div>
+          </React.Fragment>
         )}
-      </section>
+        </React.Fragment>
         ) : (
         <section style={{ 
           flex: 1,

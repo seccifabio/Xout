@@ -198,8 +198,9 @@ main {
   left: 50%;
   transform: translateX(-50%);
   z-index: 10000;
-  background: var(--accent);
-  color: black;
+  background: black;
+  color: var(--accent);
+  border: 1px solid rgba(218, 255, 0, 0.2);
   padding: 1rem 1.8rem;
   border-radius: 999px;
   font-weight: 900;
