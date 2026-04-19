@@ -1830,15 +1830,23 @@ export default function Home() {
                     width: "56px", 
                     height: "56px", 
                     borderRadius: "50%", 
-                    background: isVoiceMuted ? "rgba(255,255,255,0.1)" : "white",
-                    border: isVoiceMuted ? "1px solid rgba(255,255,255,0.2)" : "none",
-                    color: isVoiceMuted ? "white" : "black",
+                    background: (isPreparing && prepareTime <= 3) 
+                      ? "black" 
+                      : (isVoiceMuted ? "rgba(255,255,255,0.1)" : "white"),
+                    border: (isPreparing && prepareTime <= 3)
+                      ? "none"
+                      : (isVoiceMuted ? "1px solid rgba(255,255,255,0.2)" : "none"),
+                    color: (isPreparing && prepareTime <= 3) 
+                      ? (isWarmup ? "#ff6b00" : "var(--accent)") 
+                      : (isVoiceMuted ? "white" : "black"),
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    boxShadow: isVoiceMuted ? "none" : "0 10px 30px rgba(0,0,0,0.2)",
-                    opacity: isVoiceMuted ? 0.5 : 1,
+                    boxShadow: (isPreparing && prepareTime <= 3) 
+                      ? "none" 
+                      : (isVoiceMuted ? "none" : "0 10px 30px rgba(0,0,0,0.2)"),
+                    opacity: (isPreparing && prepareTime <= 3) ? 1 : (isVoiceMuted ? 0.5 : 1),
                     transition: "all 0.2s"
                   }}
                 >
