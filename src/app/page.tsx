@@ -586,6 +586,7 @@ export default function Home() {
             speak("Cooldown complete. You are ready to go.");
           } else {
             setIsFinished(true);
+            playSuccessSound();
             speak("Session complete. Outstanding work.");
           }
         }
@@ -595,6 +596,29 @@ export default function Home() {
       if (interval) clearInterval(interval);
     };
   }, [isTraining, isPreparing, prepareTime, timeLeft, currentIndex, trainingSession, isPaused, breakTime]);
+
+  const playSuccessSound = () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const now = ctx.currentTime;
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+      osc.frequency.exponentialRampToValueAtTime(1320, now + 0.2);
+      osc.frequency.exponentialRampToValueAtTime(1760, now + 0.4);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(now + 0.5);
+    } catch (e) { console.error(e); }
+  };
 
   // 2. Reactive Auditory Engine
   useEffect(() => {
@@ -1606,8 +1630,26 @@ export default function Home() {
           color: (isPreparing && prepareTime <= 3) ? "black" : "white",
           height: "100%",
           width: "100%",
-          overflow: "hidden"
+          overflow: "hidden",
+          position: "relative"
         }}>
+          {/* Round Progress Ritual */}
+          {!isPreparing && (
+            <div style={{ 
+              position: "absolute", 
+              top: 0, left: 0, right: 0, 
+              height: "4px", 
+              background: "rgba(255,255,255,0.1)",
+              zIndex: 100 
+            }}>
+              <div style={{ 
+                height: "100%", 
+                background: "var(--accent)", 
+                width: `${((currentIndex % (session.length || 1)) + 1) / (session.length || 1) * 100}%`,
+                transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
+              }} />
+            </div>
+          )}
           <div style={{ 
             textAlign: "center", 
             flex: 1, 
@@ -1628,7 +1670,7 @@ export default function Home() {
               {isPreparing ? "GET READY" : (trainingSession[currentIndex]?.bodyArea || "EXERCISE")}
             </span>
             <h2 style={{ 
-              fontSize: "3.5rem", 
+              fontSize: "4.5rem", 
               fontWeight: "900", 
               marginBottom: "1rem", 
               lineHeight: 1, 
@@ -1649,7 +1691,7 @@ export default function Home() {
             </p>
             
             <div style={{ 
-              fontSize: "8rem", 
+              fontSize: "11rem", 
               fontWeight: "900",
               color: (isPreparing && prepareTime <= 3) ? "black" : "white",
               textShadow: (isPreparing && prepareTime <= 3) ? "none" : "0 0 40px rgba(255,255,255,0.1)",
@@ -1878,14 +1920,7 @@ export default function Home() {
 
           {/* SAVE STATUS RITUAL */}
           <div style={{ position: "relative", zIndex: 10, marginTop: "1rem" }}>
-            {isCurrentSessionSaved ? (
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--accent)", fontWeight: "900", letterSpacing: "0.1em", fontSize: "0.8rem" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                SAVED TO FAVORITES
-              </div>
-            ) : (
+            {isCurrentSessionSaved ? null : (
               <button 
                 onClick={saveWorkout}
                 style={{ 
