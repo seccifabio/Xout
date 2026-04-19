@@ -158,6 +158,7 @@ export default function Home() {
   const [totalRounds, setTotalRounds] = useState(1);
   const [isFinished, setIsFinished] = useState(false);
   const [isCooldown, setIsCooldown] = useState(false);
+  const [isWarmup, setIsWarmup] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
@@ -412,9 +413,40 @@ export default function Home() {
     setSession(newSession);
   };
 
+  const startWarmup = () => {
+    setIsTraining(false);
+    setIsWarmup(true);
+    setIsCooldown(false);
+    isTrainingRef.current = true;
+    
+    // Select 3 random warmups
+    const pool = [...exercisesData.warmups].sort(() => Math.random() - 0.5);
+    const selected = pool.slice(0, 3).map(ex => ({ ...ex, duration: 30 })); 
+    
+    setTrainingSession(selected);
+    setTotalRounds(1);
+    setTotalTrainingTime(selected.length * 30 + (selected.length - 1) * 10);
+    setIsTraining(true);
+    setIsPreparing(true);
+    setPrepareTime(5);
+    setIsPaused(false);
+    setCurrentIndex(0);
+    setElapsedTime(0);
+    setTimeLeft(30);
+    
+    speak("Starting warm up ritual. Let's get the body moving.");
+  };
+
   const startSession = () => {
     if (session.length === 0) return;
+    startWarmup();
+  };
 
+  const startMainWorkout = () => {
+    if (session.length === 0) return;
+    setIsWarmup(false);
+    setIsCooldown(false);
+    
     // AUTO-ROUND: Expand session to fill the total time budget in full rounds
     const targetSeconds = selectedTime * 60;
     const singlePassDuration = session.reduce((acc, ex) => acc + (ex.duration || globalDuration) + breakTime, 0);
@@ -436,7 +468,6 @@ export default function Home() {
     setTotalTrainingTime(totalTime);
     
     setIsTraining(true);
-    setIsCooldown(false);
     setIsPreparing(true);
     setPrepareTime(10);
     setIsPaused(false);
@@ -460,7 +491,7 @@ export default function Home() {
       window.speechSynthesis.speak(silentUtterance);
     }
     
-    speak(`Get ready. First exercise: ${expandedSession[0].name}. ${expandedSession[0].desc}`);
+    speak(`Warm up complete. First exercise: ${expandedSession[0].name}. ${expandedSession[0].desc}`);
   };
 
   const startCooldown = () => {
@@ -583,7 +614,11 @@ export default function Home() {
           if (typeof window !== 'undefined') window.speechSynthesis?.cancel();
           isTrainingRef.current = false;
           setIsTraining(false);
-          if (isCooldown) {
+          if (isWarmup) {
+            setIsWarmup(false);
+            speak("Warm up complete. Transitioning to main workout.");
+            startMainWorkout();
+          } else if (isCooldown) {
             setIsCooldown(false);
             speak("Cooldown complete. You are ready to go.");
           } else {
@@ -646,13 +681,13 @@ export default function Home() {
   const currentAccent = (isPreparing && prepareTime <= 3) ? "black" : "#daff00";
 
   const currentBackground = () => {
-    // High-priority ritual color (Orange) ONLY during final 3s of preparation
-    if (isPreparing && prepareTime <= 3) return "#ff6b00";
+    if (isPreparing && prepareTime <= 3) {
+      return isWarmup ? "#ff6b00" : "var(--accent)";
+    }
     
-    // Manual mode (Cockpit) uses Volt Green
-    if (selectionMode === 'manual' && !isTraining && !isPreparing) return "#daff00";
+    // Manual mode (Cockpit) uses Volt Green when not training/preparing
+    if (selectionMode === 'manual' && !isTraining && !isPreparing) return "var(--accent)";
     
-    // Default Noir
     return "black";
   };
 
@@ -1650,7 +1685,7 @@ export default function Home() {
               fontSize: "1rem", 
               fontWeight: "900", 
               letterSpacing: "0.2em", 
-              color: isPreparing ? (prepareTime <= 3 ? "black" : "white") : "var(--accent)",
+              color: (isPreparing && prepareTime <= 3) ? "black" : "var(--accent)",
               textTransform: "uppercase",
               marginBottom: "0.5rem",
               display: "block"
@@ -1754,7 +1789,7 @@ export default function Home() {
                   borderRadius: "50%", 
                   background: (isPreparing && prepareTime <= 3) ? "black" : "#daff00",
                   border: "none",
-                  color: (isPreparing && prepareTime <= 3) ? "#ff6b00" : "black",
+                  color: (isPreparing && prepareTime <= 3) ? (isWarmup ? "#ff6b00" : "var(--accent)") : "black",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1764,20 +1799,40 @@ export default function Home() {
               >
                 <div style={{ width: "24px", height: "24px", background: "currentColor", borderRadius: "2px" }} />
               </button>
+
+              {isWarmup && (
+                <button 
+                  onClick={startMainWorkout}
+                  style={{
+                    width: "56px", 
+                    height: "56px", 
+                    borderRadius: "50%", 
+                    background: "white",
+                    border: "none",
+                    color: "black",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
+                  }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              )}
             </div>
 
             {/* UP NEXT — full-width cockpit readout */}
-            <button
-              onClick={() => setTimeLeft(0)}
+            <div
               style={{
                 width: "100%",
                 padding: "1rem",
                 background: "none",
-                border: "none",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                cursor: "pointer",
                 transition: "all 0.3s ease"
               }}
             >
@@ -1791,11 +1846,20 @@ export default function Home() {
               }}>
                 {currentIndex >= trainingSession.length - 1 
                   ? "— FINISH —" 
-                  : isCooldown 
-                    ? "COOLDOWN" 
-                    : `ROUND ${Math.floor(currentIndex / (session.length || 1)) + 1} / ${totalRounds}`}
+                  : isWarmup
+                    ? "WARM UP"
+                    : isCooldown 
+                      ? "COOLDOWN" 
+                    : (
+                      <button 
+                        onClick={() => setTimeLeft(0)}
+                        style={{ background: "none", border: "none", color: "inherit", font: "inherit", cursor: "pointer", padding: 0 }}
+                      >
+                         {`ROUND ${Math.floor(currentIndex / (session.length || 1)) + 1} / ${totalRounds}`}
+                      </button>
+                    )}
               </div>
-            </button>
+            </div>
           </div>
         </section>
       )}
