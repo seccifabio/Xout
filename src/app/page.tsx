@@ -600,23 +600,9 @@ export default function Home() {
   const playSuccessSound = () => {
     if (typeof window === 'undefined') return;
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const now = ctx.currentTime;
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(440, now);
-      osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
-      osc.frequency.exponentialRampToValueAtTime(1320, now + 0.2);
-      osc.frequency.exponentialRampToValueAtTime(1760, now + 0.4);
-      gain.gain.setValueAtTime(0.1, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(now + 0.5);
+      const audio = new Audio('/freesound_community-yeah-96783.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(e => console.error("Audio playback failed:", e));
     } catch (e) { console.error(e); }
   };
 
