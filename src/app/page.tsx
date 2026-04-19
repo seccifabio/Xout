@@ -1670,7 +1670,7 @@ export default function Home() {
               {isPreparing ? "GET READY" : (trainingSession[currentIndex]?.bodyArea || "EXERCISE")}
             </span>
             <h2 style={{ 
-              fontSize: "4.5rem", 
+              fontSize: "2.8rem", 
               fontWeight: "900", 
               marginBottom: "1rem", 
               lineHeight: 1, 
