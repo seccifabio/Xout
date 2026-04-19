@@ -1198,8 +1198,6 @@ export default function Home() {
                     letterSpacing: "0.1em",
                     border: "none",
                     cursor: "pointer",
-                    width: "100%",
-                    maxWidth: "320px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
