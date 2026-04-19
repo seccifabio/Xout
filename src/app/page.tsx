@@ -436,6 +436,7 @@ export default function Home() {
     setTotalTrainingTime(totalTime);
     
     setIsTraining(true);
+    setIsCooldown(false);
     setIsPreparing(true);
     setPrepareTime(10);
     setIsPaused(false);
@@ -490,6 +491,7 @@ export default function Home() {
       window.speechSynthesis.cancel();
     }
     setIsTraining(false);
+    setIsCooldown(false);
     setIsPreparing(false);
     isTrainingRef.current = false;
     
