@@ -2614,7 +2614,7 @@ export default function Home() {
                         letterSpacing: "0.1em"
                       }}
                     >
-                      ACTIVATE RITUAL
+                      GET READY
                     </button>
                   </div>
                 </div>
