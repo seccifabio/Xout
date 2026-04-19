@@ -18,6 +18,8 @@ interface Exercise {
 
 export default function Home() {
   const [session, setSession] = useState<Exercise[]>([]);
+  const [totalTrainingTime, setTotalTrainingTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [noEquip, setNoEquip] = useState(true);
   const [selectionMode, setSelectionMode] = useState<'surprise' | 'manual'>('surprise');
@@ -34,12 +36,19 @@ export default function Home() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [savedRituals, setSavedRituals] = useState<any[]>([]);
+  const [showToast, setShowToast] = useState(false);
   const isLoaded = useRef(false);
 
   useEffect(() => {
     setHasHydrated(true);
     const saved = localStorage.getItem('xout_saved_workouts');
     if (saved) setSavedRituals(JSON.parse(saved));
+
+    // PREVIEW RITUAL: Jump straight to post-workout states
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('preview') === 'well-done') {
+      setIsFinished(true);
+    }
   }, []);
 
   const [isTraining, setIsTraining] = useState(false);
@@ -146,6 +155,9 @@ export default function Home() {
 
   const [prepareTime, setPrepareTime] = useState(10);
   const [isPaused, setIsPaused] = useState(false);
+  const [totalRounds, setTotalRounds] = useState(1);
+  const [isFinished, setIsFinished] = useState(false);
+  const [isCooldown, setIsCooldown] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
@@ -341,14 +353,24 @@ export default function Home() {
       id: timestamp,
       date: new Date().toLocaleDateString(),
       duration: selectedTime,
-      exercises: session
+      exercises: [...session] // clone for stability
     };
+    
+    // Persist to Storage first
     const existing = JSON.parse(localStorage.getItem('xout_saved_workouts') || '[]');
     const newArchived = [workoutToSave, ...existing];
     localStorage.setItem('xout_saved_workouts', JSON.stringify(newArchived));
-    setSavedRituals(newArchived);
+    
+    // Update State functional update
+    setSavedRituals(prev => [workoutToSave, ...prev]);
     setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
+    
+    // Premium Toast Ritual
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+      setIsSaved(false);
+    }, 3000);
   };
 
   const isCurrentSessionSaved = useMemo(() => {
@@ -384,30 +406,35 @@ export default function Home() {
   const startSession = () => {
     if (session.length === 0) return;
 
-    // AUTO-LOOP: Expand session to fill the total time budget
-    const totalSeconds = selectedTime * 60;
-    const secondsPerExercise = (globalDuration || 45) + (breakTime || 0);
-    const totalSlotsNeeded = Math.max(session.length, Math.ceil(totalSeconds / secondsPerExercise));
+    // AUTO-ROUND: Expand session to fill the total time budget in full rounds
+    const targetSeconds = selectedTime * 60;
+    const singlePassDuration = session.reduce((acc, ex) => acc + (ex.duration || globalDuration) + breakTime, 0);
+    const roundsNeeded = Math.max(1, Math.ceil(targetSeconds / singlePassDuration));
 
-    let expandedSession = [...session];
-    if (totalSlotsNeeded > session.length) {
-      // Repeat the session exercises cyclically to fill the time
-      while (expandedSession.length < totalSlotsNeeded) {
-        const nextEx = session[expandedSession.length % session.length];
-        expandedSession.push({ ...nextEx });
-      }
+    let expandedSession: Exercise[] = [];
+    for (let r = 0; r < roundsNeeded; r++) {
+      session.forEach(ex => {
+        expandedSession.push({ ...ex });
+      });
     }
 
     isTrainingRef.current = true;
     setTrainingSession(expandedSession);
+    setTotalRounds(roundsNeeded);
+    
+    // Recalculate total training time based on the actual items + breaks
+    const totalTime = expandedSession.reduce((acc, item) => acc + (item.duration || globalDuration) + breakTime, 0);
+    setTotalTrainingTime(totalTime);
+    
     setIsTraining(true);
     setIsPreparing(true);
     setPrepareTime(10);
     setIsPaused(false);
     setCurrentIndex(0);
+    setElapsedTime(0);
     setTimeLeft(expandedSession[0].duration || globalDuration);
     playIgnitionBeep();
-    
+
     // Unlock native HTML5 audio for iOS background processing
     if (beepAudioRef.current) {
       beepAudioRef.current.play().then(() => {
@@ -426,6 +453,29 @@ export default function Home() {
     speak(`Get ready. First exercise: ${expandedSession[0].name}. ${expandedSession[0].desc}`);
   };
 
+  const startCooldown = () => {
+    setIsFinished(false);
+    setIsCooldown(true);
+    isTrainingRef.current = true;
+    
+    // Select 3 unique cooldown exercises
+    const pool = [...exercisesData.cooldowns].sort(() => Math.random() - 0.5);
+    const selected = pool.slice(0, 3).map(ex => ({ ...ex, duration: 60 })); 
+    
+    setTrainingSession(selected);
+    setTotalRounds(1);
+    setTotalTrainingTime(selected.length * 60 + (selected.length - 1) * breakTime);
+    setIsTraining(true);
+    setIsPreparing(true);
+    setPrepareTime(5); 
+    setIsPaused(false);
+    setCurrentIndex(0);
+    setElapsedTime(0);
+    setTimeLeft(60);
+    
+    speak("Starting cooldown. Slow down your heart rate and breathe.");
+  };
+
   const stopSession = () => {
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -437,6 +487,7 @@ export default function Home() {
     setTrainingSession([]);
     setCurrentIndex(0);
     setPrepareTime(10);
+    setElapsedTime(0);
     setTimeLeft(session[0]?.duration || 60);
     setIsPaused(false);
   };
@@ -493,36 +544,48 @@ export default function Home() {
     if (isTraining && !isPaused) {
       if (isPreparing) {
         if (prepareTime > 0) {
-          interval = setInterval(() => setPrepareTime(p => p - 1), 1000);
+          interval = setInterval(() => {
+            setPrepareTime(p => p - 1);
+            setElapsedTime(e => e + 1);
+          }, 1000);
         } else {
           setIsPreparing(false);
         }
       } else if (timeLeft > 0) {
-        interval = setInterval(() => setTimeLeft(p => p - 1), 1000);
+        interval = setInterval(() => {
+          setTimeLeft(p => p - 1);
+          setElapsedTime(e => e + 1);
+        }, 1000);
       } else if (timeLeft === 0) {
-        if (currentIndex < session.length - 1) {
+        if (currentIndex < trainingSession.length - 1) {
           const nextIdx = currentIndex + 1;
           setCurrentIndex(nextIdx);
           if (breakTime > 0) {
             setIsPreparing(true);
             setPrepareTime(breakTime);
-            setTimeLeft(session[nextIdx].duration || 60);
+            setTimeLeft(trainingSession[nextIdx].duration || 60);
           } else {
             setIsPreparing(false);
-            setTimeLeft(session[nextIdx].duration || 60);
+            setTimeLeft(trainingSession[nextIdx].duration || 60);
           }
         } else {
           if (typeof window !== 'undefined') window.speechSynthesis?.cancel();
           isTrainingRef.current = false;
           setIsTraining(false);
-          speak("Session complete. Great work.");
+          if (isCooldown) {
+            setIsCooldown(false);
+            speak("Cooldown complete. You are ready to go.");
+          } else {
+            setIsFinished(true);
+            speak("Session complete. Outstanding work.");
+          }
         }
       }
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isTraining, isPreparing, prepareTime, timeLeft, currentIndex, session, isPaused, breakTime]);
+  }, [isTraining, isPreparing, prepareTime, timeLeft, currentIndex, trainingSession, isPaused, breakTime]);
 
   // 2. Reactive Auditory Engine
   useEffect(() => {
@@ -536,11 +599,11 @@ export default function Home() {
       // Voice cues transitioning into break
       if (currentIndex > 0) {
         if (breakTime <= 10 && prepareTime === breakTime) {
-          speak(`Break. Next exercise: ${session[currentIndex]?.name}. ${session[currentIndex]?.desc}`);
+          speak(`Break. Next exercise: ${trainingSession[currentIndex]?.name}. ${trainingSession[currentIndex]?.desc}`);
         } else if (breakTime > 10 && prepareTime === breakTime) {
           speak(`Break.`);
         } else if (breakTime > 10 && prepareTime === 10) {
-          speak(`Next exercise: ${session[currentIndex]?.name}. ${session[currentIndex]?.desc}`);
+          speak(`Next exercise: ${trainingSession[currentIndex]?.name}. ${trainingSession[currentIndex]?.desc}`);
         }
       }
     } else {
@@ -548,16 +611,16 @@ export default function Home() {
       if (timeLeft <= 3 && timeLeft >= 1) playBeep();
       
       // Zero-recovery next exercise voice cue at exactly 10s left
-      if (breakTime === 0 && timeLeft === 10 && currentIndex < session.length - 1) {
-        speak(`Next exercise: ${session[currentIndex + 1]?.name}. ${session[currentIndex + 1]?.desc}`);
+      if (breakTime === 0 && timeLeft === 10 && currentIndex < trainingSession.length - 1) {
+        speak(`Next exercise: ${trainingSession[currentIndex + 1]?.name}. ${trainingSession[currentIndex + 1]?.desc}`);
       }
       
       // Ignition beep for zero-recovery transitions
-      if (breakTime === 0 && currentIndex > 0 && timeLeft === (session[currentIndex]?.duration || 60)) {
+      if (breakTime === 0 && currentIndex > 0 && timeLeft === (trainingSession[currentIndex]?.duration || 60)) {
         playIgnitionBeep();
       }
     }
-  }, [prepareTime, timeLeft, isPreparing, isTraining, isPaused, breakTime, currentIndex, session]);
+  }, [prepareTime, timeLeft, isPreparing, isTraining, isPaused, breakTime, currentIndex, trainingSession]);
 
   const currentAccent = (isPreparing && prepareTime <= 3) ? "black" : "#daff00";
 
@@ -570,6 +633,12 @@ export default function Home() {
     
     // Default Noir
     return "black";
+  };
+
+  const formatTime = (seconds: number) => {
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+    return `${min}:${sec.toString().padStart(2, '0')}`;
   };
 
   const isDefaultPage = selectionMode === 'surprise' && !isTraining && !isPreparing && session.length === 0;
@@ -973,7 +1042,7 @@ export default function Home() {
                 </button>
 
                 {/* Area chips */}
-                {['All', 'Upper', 'Lower', 'Core', 'Abs', 'Full'].map(area => (
+                {['All', 'Upper', 'Lower', 'Core', 'Full'].map(area => (
                   <button
                     key={area}
                     onClick={() => setSelectedArea(area)}
@@ -1002,7 +1071,6 @@ export default function Home() {
         )}
 
       {!(isTraining || isPreparing) ? (
-        <>
           <section 
           className={`session-list ${selectionMode === 'manual' ? 'animate-up' : ''}`} 
           style={{ 
@@ -1149,15 +1217,32 @@ export default function Home() {
                   </div>
                 </div>
 
-                <h3 style={{ 
-                  fontSize: "2rem", 
-                  fontWeight: "400", 
-                  letterSpacing: "-0.01em", 
-                  marginBottom: "0",
-                  color: selectionMode === 'manual' ? "black" : "white"
-                }}>
-                  {ex.name}
-                </h3>
+                <div style={{ marginBottom: "0.5rem" }}>
+                  <div style={{ 
+                    display: "inline-block",
+                    padding: "0.2rem 0.5rem", 
+                    background: selectionMode === 'manual' ? "black" : "rgba(255,255,255,0.1)", 
+                    color: selectionMode === 'manual' ? "var(--accent)" : "white",
+                    fontSize: "0.6rem",
+                    fontWeight: "900",
+                    borderRadius: "4px",
+                    textTransform: "uppercase"
+                  }}>
+                    {ex.id.startsWith('w') ? 'WARMUP' : ex.id.startsWith('c') ? 'COOLDOWN' : (ex as any).bodyArea || 'EXERCISE'}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <h3 style={{ 
+                    fontSize: "2rem", 
+                    fontWeight: "400", 
+                    letterSpacing: "-0.01em", 
+                    marginBottom: "0",
+                    color: selectionMode === 'manual' ? "black" : "white"
+                  }}>
+                    {ex.name}
+                  </h3>
+                </div>
                 
                 <p style={{ 
                   fontSize: "0.9rem", 
@@ -1227,8 +1312,6 @@ export default function Home() {
             );
           })}
           
-        </section>
-
         {session.length > 0 && !(isTraining || isPreparing) && (
           <div style={{ 
             position: "fixed", 
@@ -1373,6 +1456,22 @@ export default function Home() {
                         {String(idx + 1).padStart(2, '0')}
                       </span>
                       <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          <span style={{ 
+                            fontSize: "0.6rem", 
+                            fontWeight: "900", 
+                            color: "black", 
+                            opacity: 0.4,
+                            textTransform: "uppercase"
+                          }}>
+                            {ex.id.startsWith('w') ? 'WARMUP' : ex.id.startsWith('c') ? 'COOLDOWN' : (ex as any).bodyArea || 'EXERCISE'}
+                          </span>
+                          {favorites.includes(ex.name) && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.3 }}>
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                            </svg>
+                          )}
+                        </div>
                         <span style={{ fontWeight: "900", fontSize: "1rem", textTransform: "uppercase" }}>{ex.name}</span>
                         <span style={{ 
                           fontSize: "0.75rem", 
@@ -1385,46 +1484,53 @@ export default function Home() {
                         </span>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                      <button 
-                        onClick={() => toggleFavorite(ex.name)}
-                        style={{ 
-                          background: "none",
-                          border: "none",
-                          padding: "8px",
-                          cursor: "pointer",
-                          color: favorites.includes(ex.name) ? "black" : "rgba(0,0,0,0.15)",
-                          display: "flex", 
-                          alignItems: "center",
-                          transition: "all 0.2s"
-                        }}
-                      >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill={favorites.includes(ex.name) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.5">
-                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                        </svg>
-                      </button>
-                      <button 
-                        onClick={() => setSession(prev => prev.filter((_, i) => i !== idx))}
-                        style={{ 
-                          background: "rgba(0,0,0,0.1)",
-                          border: "none",
-                          width: "36px",
-                          height: "36px",
-                          borderRadius: "50%",
-                          cursor: "pointer",
-                          color: "black",
-                          display: "flex", 
-                          alignItems: "center",
-                          justifyContent: "center",
-                          transition: "all 0.2s"
-                        }}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="18" y1="6" x2="6" y2="18"></line>
-                          <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                      </button>
-                    </div>
+                      <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <button 
+                            onClick={() => {
+                              if (idx === 0) return;
+                              const newSession = [...session];
+                              [newSession[idx - 1], newSession[idx]] = [newSession[idx], newSession[idx - 1]];
+                              setSession(newSession);
+                            }}
+                            style={{ background: "none", border: "none", padding: "2px", cursor: idx === 0 ? "default" : "pointer", color: "black", opacity: idx === 0 ? 0.05 : 0.3 }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (idx === session.length - 1) return;
+                              const newSession = [...session];
+                              [newSession[idx + 1], newSession[idx]] = [newSession[idx], newSession[idx + 1]];
+                              setSession(newSession);
+                            }}
+                            style={{ background: "none", border: "none", padding: "2px", cursor: idx === session.length - 1 ? "default" : "pointer", color: "black", opacity: idx === session.length - 1 ? 0.05 : 0.3 }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                          </button>
+                        </div>
+                        <button 
+                          onClick={() => setSession(prev => prev.filter((_, i) => i !== idx))}
+                          style={{ 
+                            background: "rgba(0,0,0,0.08)",
+                            border: "none",
+                            width: "24px",
+                            height: "24px",
+                            borderRadius: "50%",
+                            cursor: "pointer",
+                            color: "black",
+                            display: "flex", 
+                            alignItems: "center", 
+                            justifyContent: "center",
+                            transition: "all 0.2s"
+                          }}
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
+                      </div>
                   </div>
                 ))}
               </div>
@@ -1537,7 +1643,7 @@ export default function Home() {
               {session.length > 0 && (
                 <button 
                   className="button" 
-                  onClick={() => setIsTrayExpanded(true)}
+                  onClick={startSession}
                   style={{ 
                     width: "80px", 
                     height: "80px", 
@@ -1562,8 +1668,8 @@ export default function Home() {
             </div>
           </div>
         )}
-      </>
-      ) : (
+      </section>
+        ) : (
         <section style={{ 
           flex: 1,
           display: "flex",
@@ -1583,7 +1689,7 @@ export default function Home() {
             padding: "2rem 1rem 0"
           }} className={isPreparing ? "animate" : ""}>
             <span style={{ 
-              fontSize: "0.8rem", 
+              fontSize: "1rem", 
               fontWeight: "900", 
               letterSpacing: "0.2em", 
               color: isPreparing ? (prepareTime <= 3 ? "black" : "white") : "var(--accent)",
@@ -1594,10 +1700,10 @@ export default function Home() {
               {isPreparing ? "GET READY" : (trainingSession[currentIndex]?.bodyArea || "EXERCISE")}
             </span>
             <h2 style={{ 
-              fontSize: "2.8rem", 
+              fontSize: "3.5rem", 
               fontWeight: "900", 
-              marginBottom: "0.5rem", 
-              lineHeight: 1.1, 
+              marginBottom: "1rem", 
+              lineHeight: 1, 
               color: (isPreparing && prepareTime <= 3) ? "black" : "white" 
             }}>
               {trainingSession[currentIndex]?.name}
@@ -1619,12 +1725,24 @@ export default function Home() {
               fontWeight: "900",
               color: (isPreparing && prepareTime <= 3) ? "black" : "white",
               textShadow: (isPreparing && prepareTime <= 3) ? "none" : "0 0 40px rgba(255,255,255,0.1)",
-              transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-              transform: (isPreparing && prepareTime <= 3) || (!isPreparing && timeLeft <= 3) ? "scale(1.1)" : "scale(1)",
-              lineHeight: 1
+              position: "relative"
             }}>
               {isPreparing ? prepareTime : timeLeft}
-              {!isPreparing && <span style={{ fontSize: "2rem", verticalAlign: "baseline", marginLeft: "2px" }}>s</span>}
+              {/* ZEN BREATHING UI FOR COOLDOWN */}
+              {isCooldown && !isPreparing && (
+                <div style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  width: "150px",
+                  height: "150px",
+                  borderRadius: "50%",
+                  border: "2px solid var(--accent)",
+                  opacity: 0.3,
+                  animation: "breath 4s ease-in-out infinite"
+                }} />
+              )}
             </div>
           </div>
 
@@ -1639,7 +1757,7 @@ export default function Home() {
           }}>
             {/* Total time label */}
             <div style={{ textAlign: "center", opacity: 0.45, letterSpacing: "0.2em", fontSize: "0.7rem", marginBottom: "1rem", fontWeight: "900", color: (isPreparing && prepareTime <= 3) ? "black" : "white" }}>
-              TOTAL TIME: {selectedTime}:00
+              REMAINING: {formatTime(Math.max(0, totalTrainingTime - elapsedTime))}
             </div>
             {/* Controls row — centered */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "2.5rem", marginBottom: "2rem" }}>
@@ -1713,11 +1831,151 @@ export default function Home() {
                 color: (isPreparing && prepareTime <= 3) ? "black" : "white",
                 opacity: 0.6
               }}>
-                {currentIndex < trainingSession.length - 1 ? trainingSession[currentIndex + 1].name : "— FINISH —"}
+                {currentIndex >= trainingSession.length - 1 
+                  ? "— FINISH —" 
+                  : isCooldown 
+                    ? "COOLDOWN" 
+                    : `ROUND ${Math.floor(currentIndex / (session.length || 1)) + 1} / ${totalRounds}`}
               </div>
             </button>
           </div>
         </section>
+      )}
+      </main>
+
+      {isFinished && (
+        <div style={{
+          position: "fixed",
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: "black",
+          zIndex: 3000,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "4rem",
+          padding: "2rem",
+          textAlign: "center",
+          overflow: "hidden"
+        }} className="animate-fade">
+          {/* Background Image with Alpha */}
+          <div style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: "url('/Background.jpeg') center/cover no-repeat",
+            opacity: 0.2, // alpha
+            zIndex: 1,
+            pointerEvents: "none"
+          }} />
+
+          {/* Logo at top */}
+          <div style={{ position: "relative", zIndex: 10 }}>
+            <h1 className="title" style={{ fontSize: "4.5rem", color: "white", margin: 0 }}>
+              x<span style={{ color: "var(--accent)" }}>out</span>
+            </h1>
+          </div>
+
+          <div style={{ position: "relative", zIndex: 10 }}>
+            <h2 style={{ 
+              fontSize: "6rem", 
+              fontWeight: "900", 
+              color: "white", 
+              letterSpacing: "-0.05em", 
+              lineHeight: 0.85, 
+              textTransform: "uppercase"
+            }}>COOL</h2>
+            <h2 style={{ 
+              fontSize: "6rem", 
+              fontWeight: "900", 
+              color: "var(--accent)", 
+              letterSpacing: "-0.05em", 
+              lineHeight: 0.85, 
+              textTransform: "uppercase"
+            }}>DOWN</h2>
+          </div>
+
+          <div style={{ 
+            position: "relative", 
+            zIndex: 10, 
+            display: "flex", 
+            flexDirection: "row", 
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "2rem" 
+          }}>
+            {/* Skip Circle Button - Left */}
+            <button 
+              onClick={() => { setIsFinished(false); stopSession(); }}
+              style={{
+                width: "65px",
+                height: "65px",
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.05)",
+                color: "white",
+                border: "1px solid rgba(255,255,255,0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer"
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+
+            {/* Play Circle Button - Center/Primary */}
+            <button 
+              onClick={startCooldown}
+              style={{
+                width: "110px",
+                height: "110px",
+                borderRadius: "50%",
+                background: "var(--accent)",
+                color: "black",
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 10px 40px rgba(218, 255, 0, 0.3)"
+              }}
+            >
+              <svg width="45" height="45" viewBox="0 0 24 24" fill="black">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </button>
+          </div>
+
+          {/* SAVE STATUS RITUAL */}
+          <div style={{ position: "relative", zIndex: 10, marginTop: "1rem" }}>
+            {isCurrentSessionSaved ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--accent)", fontWeight: "900", letterSpacing: "0.1em", fontSize: "0.8rem" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                SAVED TO FAVORITES
+              </div>
+            ) : (
+              <button 
+                onClick={saveWorkout}
+                style={{ 
+                  background: "none", 
+                  border: "none", 
+                  color: "rgba(255,255,255,0.4)", 
+                  fontSize: "0.8rem", 
+                  fontWeight: "900",
+                  cursor: "pointer",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase"
+                }}
+              >
+                DID YOU LIKE IT? <span style={{ color: "var(--accent)", borderBottom: "1.5px solid var(--accent)" }}>SAVE WORKOUT</span>
+              </button>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Time Ritual Modal - PERSISTENT SLIDE SUPPORT */}
@@ -1758,7 +2016,7 @@ export default function Home() {
             <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "2px", margin: "0 auto", marginBottom: "0.5rem" }} />
             
             <section>
-              <h4 style={{ fontSize: "0.7rem", textTransform: "uppercase", opacity: 0.5, letterSpacing: "0.2em", marginBottom: "1rem" }}>Session Duration (MIN)</h4>
+              <h4 style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "white", opacity: 0.8, letterSpacing: "0.2em", marginBottom: "1rem" }}>Session Duration (MIN)</h4>
               <div 
                 style={{ 
                   display: "flex", 
@@ -1784,7 +2042,7 @@ export default function Home() {
                       alignItems: "center",
                       justifyContent: "center",
                       background: "none",
-                      color: selectedTime === t ? "var(--accent)" : "rgba(255,255,255,0.2)",
+                      color: selectedTime === t ? "var(--accent)" : "white",
                       border: "none",
                       cursor: "pointer",
                       transition: "all 0.3s ease"
@@ -1800,7 +2058,7 @@ export default function Home() {
                     <div style={{ 
                       width: "2px", 
                       height: selectedTime === t ? "12px" : "6px", 
-                      background: selectedTime === t ? "var(--accent)" : "rgba(255,255,255,0.1)",
+                      background: selectedTime === t ? "var(--accent)" : "rgba(255,255,255,0.4)",
                       marginTop: "0.5rem"
                     }} />
                   </button>
@@ -1809,7 +2067,7 @@ export default function Home() {
             </section>
 
             <section>
-              <h4 style={{ fontSize: "0.7rem", textTransform: "uppercase", opacity: 0.5, letterSpacing: "0.2em", marginBottom: "1rem" }}>Work Intensity (SEC)</h4>
+              <h4 style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "white", opacity: 0.8, letterSpacing: "0.2em", marginBottom: "1rem" }}>Work Intensity (SEC)</h4>
               <div style={{ 
                 display: "flex", 
                 alignItems: "center", 
@@ -1837,7 +2095,7 @@ export default function Home() {
             </section>
 
             <section>
-              <h4 style={{ fontSize: "0.7rem", textTransform: "uppercase", opacity: 0.5, letterSpacing: "0.2em", marginBottom: "1rem" }}>Recovery Window (SEC)</h4>
+              <h4 style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "white", opacity: 0.8, letterSpacing: "0.2em", marginBottom: "1rem" }}>Recovery Window (SEC)</h4>
               <div style={{ 
                 display: "flex", 
                 alignItems: "center", 
@@ -2245,7 +2503,14 @@ export default function Home() {
           </div>
       </div>
 
-      </main>
+      {showToast && (
+        <div className="toast">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          Workout Saved to Favorites
+        </div>
+      )}
     </>
   );
 }
