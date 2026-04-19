@@ -38,7 +38,20 @@ export default function Home() {
   const [savedRituals, setSavedRituals] = useState<any[]>([]);
   const [bgIndex, setBgIndex] = useState(1);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  
+  const [isSplashActive, setIsSplashActive] = useState(true);
+  const [isSplashExiting, setIsSplashExiting] = useState(false);
+
+  useEffect(() => {
+    // Start exit after reveal + shine sequence (~2.5s)
+    const timer = setTimeout(() => setIsSplashExiting(true), 2500);
+    // Unmount after exit animation (~1s)
+    const unmountTimer = setTimeout(() => setIsSplashActive(false), 3500);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(unmountTimer);
+    };
+  }, []);
+
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
@@ -768,12 +781,30 @@ export default function Home() {
               setSearchQuery("");
             }}
             style={{ 
-              color: selectionMode === 'manual' ? "black" : "white", 
               margin: 0, 
-              cursor: "pointer" 
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              lineHeight: "1"
             }}
           >
-            x<span style={{ color: selectionMode === 'manual' ? "rgba(0,0,0,0.3)" : "var(--accent)" }}>out</span>
+            <span style={{ 
+              color: selectionMode === 'manual' ? "rgba(0,0,0,0.12)" : "white", 
+              position: "relative", 
+              zIndex: 10 
+            }}>X</span>
+            <span style={{ overflow: "hidden", display: "inline-flex", paddingRight: "1.5rem" }}>
+              <span 
+                data-text="OUT"
+                className="logo-out-animate logo-text-shiny-ritual"
+                style={{ 
+                  color: selectionMode === 'manual' ? "#000000" : "#daff00",
+                  '--logo-base-color': selectionMode === 'manual' ? "#000000" : "#daff00"
+                } as any}
+              >
+                OUT
+              </span>
+            </span>
           </h1>
 
           <div style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
@@ -786,9 +817,9 @@ export default function Home() {
               style={{
                 width: "56px",
                 height: "56px",
-                background: selectionMode === 'manual' ? "black" : "rgba(255,255,255,0.05)",
-                color: selectionMode === 'manual' ? "#daff00" : "var(--accent)",
-                border: selectionMode === 'manual' ? "0.5px solid black" : "none",
+                background: selectionMode === 'manual' ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)",
+                color: selectionMode === 'manual' ? "black" : "var(--accent)",
+                border: selectionMode === 'manual' ? "1.5px solid rgba(0,0,0,0.1)" : "none",
                 borderRadius: "50%",
                 cursor: "pointer",
                 transition: "all 0.2s",
@@ -826,9 +857,9 @@ export default function Home() {
               style={{
                 width: "56px",
                 height: "56px",
-                background: selectionMode === 'manual' ? "black" : "rgba(255,255,255,0.05)",
-                color: selectionMode === 'manual' ? currentAccent : "white",
-                border: "none",
+                background: selectionMode === 'manual' ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)",
+                color: selectionMode === 'manual' ? "black" : "white",
+                border: selectionMode === 'manual' ? "1.5px solid rgba(0,0,0,0.1)" : "none",
                 borderRadius: "50%",
                 cursor: "pointer",
                 display: "flex",
@@ -1065,9 +1096,9 @@ export default function Home() {
                     outline: "none",
                     color: selectionMode === 'manual' ? "#daff00" : "white",
                     fontSize: "16px", /* iOS zoom prevention: must be >= 16px */
-                    fontWeight: "700",
-                    fontFamily: "var(--font-geist-mono)",
-                    letterSpacing: "0.05em",
+                    fontWeight: "400",
+                    fontFamily: "inherit",
+                    letterSpacing: "normal",
                     padding: "0.75rem 0",
                     minWidth: 0
                   }}
@@ -1075,21 +1106,22 @@ export default function Home() {
                 <button
                   onClick={() => { setIsSearching(false); setSearchQuery(''); }}
                   style={{
-                    background: "white",
+                    background: selectionMode === 'manual' ? "white" : "rgba(255,255,255,0.2)",
                     border: "none",
-                    width: "40px",
-                    height: "40px",
+                    width: "30px",
+                    height: "30px",
                     borderRadius: "50%",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    color: "black",
-                    fontSize: "1.5rem",
-                    fontWeight: "900",
+                    color: selectionMode === 'manual' ? "black" : "white",
+                    fontSize: "1.1rem",
+                    fontWeight: "600",
                     flexShrink: 0,
                     marginRight: "0.5rem",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                    marginLeft: "0.5rem",
+                    transition: "all 0.2s"
                   }}
                 >
                   ✕
@@ -1134,12 +1166,12 @@ export default function Home() {
                     key={area}
                     onClick={() => setSelectedArea(area)}
                     style={{
-                      background: selectedArea === area ? "black" : (selectionMode === 'manual' ? "rgba(0,0,0,0.06)" : "rgba(0,0,0,0.12)"),
-                      color: selectedArea === area ? currentAccent : (selectionMode === 'manual' ? "black" : "rgba(0,0,0,0.65)"),
-                      border: "none",
-                      padding: "1rem 2.2rem",
-                      fontSize: "0.9rem",
-                      fontWeight: "900",
+                      background: selectedArea === area ? (selectionMode === 'manual' ? "rgba(0,0,0,0.3)" : "black") : (selectionMode === 'manual' ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)"),
+                      color: selectedArea === area ? (selectionMode === 'manual' ? "black" : currentAccent) : (selectionMode === 'manual' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)"),
+                      border: selectionMode === 'manual' ? (selectedArea === area ? "1.5px solid black" : "1px solid rgba(0,0,0,0.15)") : "none",
+                      padding: "0.8rem 1.8rem",
+                      fontSize: "0.85rem",
+                      fontWeight: "700",
                       borderRadius: "100px",
                       cursor: "pointer",
                       whiteSpace: "nowrap",
@@ -1952,7 +1984,38 @@ export default function Home() {
           </div>
         </section>
       )}
-      </main>
+  
+      {isSplashActive && (
+        <div className={`splash-screen ${isSplashExiting ? 'exit' : ''}`}>
+          <div className="splash-panel splash-panel-left"></div>
+          <div className="splash-panel splash-panel-right"></div>
+          <h1 
+            style={{ 
+              margin: 0, 
+              display: "flex",
+              alignItems: "center",
+              lineHeight: "1",
+              fontSize: "6rem",
+              fontFamily: "var(--font-sans)"
+            }}
+          >
+            <span style={{ color: "white", position: "relative", zIndex: 10 }}>X</span>
+            <span style={{ overflow: "hidden", display: "inline-flex", paddingRight: "1.5rem" }}>
+              <span 
+                data-text="OUT"
+                className="logo-out-animate logo-text-shiny-ritual"
+                style={{ 
+                  color: "#daff00",
+                  '--logo-base-color': "#daff00"
+                } as any}
+              >
+                OUT
+              </span>
+            </span>
+          </h1>
+        </div>
+      )}
+    </main>
 
       {isFinished && (
         <div style={{
