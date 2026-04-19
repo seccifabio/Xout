@@ -1174,7 +1174,7 @@ export default function Home() {
             }} className="animate">
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <h2 style={{ fontSize: "3.5rem", fontWeight: "900", letterSpacing: "-0.05em", lineHeight: "1", margin: 0 }}>
-                  DEFEAT THE <br/> HOTEL ROOM
+                  Skip the excuses. <br/> Not the workout.
                 </h2>
                 <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center" }}>
                   {noEquip && (
