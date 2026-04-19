@@ -219,6 +219,15 @@ export default function Home() {
     }
   }, [favorites, manualSession, selectionMode, globalDuration, maxExercises]);
 
+  const removeFromSession = (id: string) => {
+    const ex = session.find(e => e.id === id);
+    if (!ex) return;
+    setManualSession(prev => prev.filter(m => m.id !== id && m.name !== ex.name));
+    if (favorites.includes(ex.name)) {
+      toggleFavorite(ex.name);
+    }
+  };
+
   const addToSession = (ex: Exercise) => {
     // Check if it's already in manual picks
     const isAlreadyManual = manualSession.some(m => m.name === ex.name);
