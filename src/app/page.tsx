@@ -942,29 +942,33 @@ export default function Home() {
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
         willChange: "transform"
       }}>
+        <button 
+          onClick={() => setIsOptionsOpen(false)} 
+          style={{ 
+            position: "absolute",
+            top: "1.2rem",
+            right: "1.2rem",
+            background: "rgba(255,255,255,0.08)", 
+            border: "none", 
+            color: "white", 
+            width: "56px", 
+            height: "56px", 
+            borderRadius: "50%", 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            cursor: "pointer",
+            fontSize: "1.2rem",
+            fontWeight: "300",
+            zIndex: 10
+          }}
+        >
+          ✕
+        </button>
         <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "2px", margin: "0 auto", marginBottom: "0.2rem" }} />
         
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ fontSize: "0.8rem", fontWeight: "900", letterSpacing: "0.2em", color: "var(--accent)", textTransform: "uppercase" }}>SETTINGS</h2>
-          <button 
-            onClick={() => setIsOptionsOpen(false)} 
-            style={{ 
-              background: "rgba(255,255,255,0.08)", 
-              border: "none", 
-              color: "white", 
-              width: "56px", 
-              height: "56px", 
-              borderRadius: "50%", 
-              display: "flex", 
-              alignItems: "center", 
-              justifyContent: "center", 
-              cursor: "pointer",
-              fontSize: "1.2rem",
-              fontWeight: "300"
-            }}
-          >
-            ✕
-          </button>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
