@@ -2238,39 +2238,39 @@ export default function Home() {
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
         willChange: "transform"
       }}>
+        <button 
+          onClick={() => setIsTimeSheetOpen(false)}
+          style={{
+            position: "absolute",
+            top: "1.2rem",
+            right: "1.2rem",
+            width: "56px",
+            height: "56px",
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.05)",
+            border: "none",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            fontSize: "1.2rem",
+            fontWeight: "300",
+            zIndex: 10
+          }}
+        >
+          ✕
+        </button>
         <header style={{
           padding: "2.2rem 1.5rem",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           display: "flex",
-          alignItems: "center",
-          position: "relative"
+          alignItems: "center"
         }}>
           <div>
             <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>SESSION PARAMETERS</h2>
             <span style={{ fontSize: "0.6rem", opacity: 0.7, letterSpacing: "0.1em", fontWeight: "900" }}>RITUAL CONFIG</span>
           </div>
-          <button 
-            onClick={() => setIsTimeSheetOpen(false)}
-            style={{
-              position: "absolute",
-              top: "1.5rem",
-              right: "1.5rem",
-              width: "56px",
-              height: "56px",
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.05)",
-              border: "none",
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              fontSize: "1.2rem",
-              fontWeight: "300"
-            }}
-          >
-            ✕
-          </button>
         </header>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem" }} className="no-scrollbar">
@@ -2415,6 +2415,27 @@ export default function Home() {
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s",
         willChange: "transform"
       }}>
+          <button 
+            onClick={() => setIsFavoritesOpen(false)}
+            style={{
+              position: "absolute",
+              top: "1.2rem",
+              right: "1.2rem",
+              width: "56px",
+              height: "56px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.05)",
+              border: "none",
+              color: "white",
+              fontSize: "1.2rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              fontWeight: "300",
+              zIndex: 10
+            }}
+          >✕</button>
           <header style={{
             padding: "2.2rem 1.5rem",
             borderBottom: "1px solid rgba(255,255,255,0.05)",
@@ -2426,26 +2447,6 @@ export default function Home() {
               <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>FAVOURITE MOVEMENTS</h2>
               <span style={{ fontSize: "0.6rem", opacity: 0.5, letterSpacing: "0.1em", fontWeight: "900" }}>{favorites.length} / 10 PERSONAL MANIFESTO</span>
             </div>
-            <button 
-              onClick={() => setIsFavoritesOpen(false)}
-              style={{
-                position: "absolute",
-                top: "1.5rem",
-                right: "1.5rem",
-                width: "56px",
-                height: "56px",
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.05)",
-                border: "none",
-                color: "white",
-                fontSize: "1.2rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                fontWeight: "300"
-              }}
-            >✕</button>
           </header>
 
           <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem" }} className="no-scrollbar">
@@ -2526,39 +2527,39 @@ export default function Home() {
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s",
         willChange: "transform"
       }}>
+        <button 
+          onClick={() => setIsWeightOpen(false)}
+          style={{
+            position: "absolute",
+            top: "1.2rem",
+            right: "1.2rem",
+            width: "56px",
+            height: "56px",
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.1)",
+            border: "none",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            fontSize: "1.2rem",
+            fontWeight: "300",
+            zIndex: 10
+          }}
+        >
+          ✕
+        </button>
         <header style={{
           padding: "2.2rem 1.5rem",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           display: "flex",
-          alignItems: "center",
-          position: "relative"
+          alignItems: "center"
         }}>
           <div>
             <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>WEIGHT TRACKER</h2>
             <span style={{ fontSize: "0.6rem", opacity: 0.7, letterSpacing: "0.1em", fontWeight: "900" }}>PROGRESS RITUAL</span>
           </div>
-          <button 
-            onClick={() => setIsWeightOpen(false)}
-            style={{
-              position: "absolute",
-              top: "1.5rem",
-              right: "1.5rem",
-              width: "56px",
-              height: "56px",
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.1)",
-              border: "none",
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              fontSize: "1.2rem",
-              fontWeight: "300"
-            }}
-          >
-            ✕
-          </button>
         </header>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem" }}>
@@ -2821,37 +2822,37 @@ export default function Home() {
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s",
         willChange: "transform"
       }}>
+        <button 
+          onClick={() => setIsAreaModalOpen(false)}
+          style={{
+            position: "absolute",
+            top: "1.2rem",
+            right: "1.2rem",
+            width: "56px",
+            height: "56px",
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.05)",
+            border: "none",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            fontSize: "1.2rem",
+            fontWeight: "300",
+            zIndex: 10
+          }}
+        >✕</button>
         <header style={{
           padding: "2.2rem 1.5rem",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           display: "flex",
-          alignItems: "center",
-          position: "relative"
+          alignItems: "center"
         }}>
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>TARGET AREA</h2>
             <span style={{ fontSize: "0.6rem", opacity: 0.7, letterSpacing: "0.1em", fontWeight: "900" }}>SURPRISE FILTER</span>
           </div>
-          <button 
-            onClick={() => setIsAreaModalOpen(false)}
-            style={{
-              position: "absolute",
-              top: "1.5rem",
-              right: "1.5rem",
-              width: "56px",
-              height: "56px",
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.05)",
-              border: "none",
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.2rem",
-              cursor: "pointer",
-              fontWeight: "300"
-            }}
-          >✕</button>
         </header>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem" }} className="no-scrollbar">
