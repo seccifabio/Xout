@@ -203,27 +203,39 @@ export default function Home() {
 
     const basePool = selectedAreas.includes('Abs') ? exercisesData.exercises : all;
     
-    return basePool.filter(ex => {
-      if (noEquip && (ex as any).requiresEquipment) return false;
-      if (isSurfMode && !(ex as any).surf) return false;
+      const filtered = basePool.filter(ex => {
+        if (noEquip && (ex as any).requiresEquipment) return false;
+        if (isSurfMode && !(ex as any).surf) return false;
+        if (isYogaMode && !(ex as any).yoga) return false;
+        if ((isSurfMode || isYogaMode) && favorites.includes(ex.name)) return false;
 
-      if (selectedAreas.length > 0) {
-        const area = (ex.bodyArea || "").trim();
-        const isAreaMatch = selectedAreas.some(sel => {
-          if (sel === 'Abs') return (area === 'Core' || area === 'Abs');
-          return area === sel;
-        });
+        if (selectedAreas.length > 0) {
+          const area = (ex.bodyArea || "").trim();
+          const isAreaMatch = selectedAreas.some(sel => {
+            if (sel === 'Abs') return (area === 'Core' || area === 'Abs');
+            return area === sel;
+          });
 
-        // Special rule for Abs: if only Abs is selected, only show main exercises (no warmups/cooldowns)
-        if (selectedAreas.length === 1 && selectedAreas[0] === 'Abs') {
-          if (!ex.id.startsWith('e')) return false;
+          if (selectedAreas.length === 1 && selectedAreas[0] === 'Abs') {
+            if (!ex.id.startsWith('e')) return false;
+          }
+
+          if (!isAreaMatch) return false;
         }
+        return true;
+      });
 
-        if (!isAreaMatch) return false;
+      // Sort favorites to the top in normal mode
+      if (!isSurfMode && !isYogaMode) {
+        return [...filtered].sort((a, b) => {
+          const aFav = favorites.includes(a.name) ? 1 : 0;
+          const bFav = favorites.includes(b.name) ? 1 : 0;
+          return bFav - aFav;
+        });
       }
-      return true;
-    });
-  }, [noEquip, selectedAreas, searchQuery, isSurfMode]);
+
+      return filtered;
+    }, [noEquip, selectedAreas, searchQuery, isSurfMode, isYogaMode, favorites]);
 
   const [prepareTime, setPrepareTime] = useState(10);
   const [isPaused, setIsPaused] = useState(false);
@@ -401,13 +413,15 @@ export default function Home() {
         const catPool = allPool.filter(ex => {
           if (isSurfMode && !(ex as any).surf) return false;
           if (isYogaMode && !(ex as any).yoga) return false;
+          if ((isSurfMode || isYogaMode) && favorites.includes(ex.name)) return false;
           const area = (ex.bodyArea || "").trim();
           if (targetCat === 'Midsection') return (area === 'Core' || area === 'Abs');
           return area === targetCat;
         }).filter(ex => !finalSession.some(f => f.name === ex.name));
 
         if (catPool.length > 0) {
-          const catFavs = catPool.filter(ex => favorites.includes(ex.name));
+          const useFavs = !isSurfMode && !isYogaMode;
+          const catFavs = useFavs ? catPool.filter(ex => favorites.includes(ex.name)) : [];
           const randomEx = catFavs.length > 0
             ? catFavs[Math.floor(Math.random() * catFavs.length)]
             : catPool[Math.floor(Math.random() * catPool.length)];
@@ -423,6 +437,7 @@ export default function Home() {
       const areaPool = allPool.filter(ex => {
         if (isSurfMode && !(ex as any).surf) return false;
         if (isYogaMode && !(ex as any).yoga) return false;
+        if ((isSurfMode || isYogaMode) && favorites.includes(ex.name)) return false;
         const area = (ex.bodyArea || "").trim();
         const isAreaMatch = selectedAreas.some(sel => {
           if (sel === 'Abs') return (area === 'Core' || area === 'Abs');
