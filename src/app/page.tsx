@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import exercisesData from "../data/exercises.json";
 
+const BODY_AREAS = ['All', 'Upper', 'Lower', 'Abs', 'Core', 'Full'];
+
 interface Exercise {
   id: string;
   name: string;
@@ -208,6 +210,7 @@ export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
   const [isRitualActive, setIsRitualActive] = useState(false);
+  const [isAreaModalOpen, setIsAreaModalOpen] = useState(false);
 
   const [weights, setWeights] = useState<{ date: string, value: number }[]>([]);
   const [isWeightOpen, setIsWeightOpen] = useState(false);
@@ -250,7 +253,9 @@ export default function Home() {
   useEffect(() => {
     // Skip sync if we just loaded a ritual or surprise to prevent it from being overwritten by favorites
     if (selectionMode === 'manual' && isLoaded.current && !isRitualActive) {
-      const favExs = favorites.map(name => {
+      // If we are here, we definitely want to sync favorites to manual session
+      const currentFavNames = (favorites || []).slice(0, 10);
+      const favExs = currentFavNames.map(name => {
         const ex = [...exercisesData.warmups, ...exercisesData.exercises, ...exercisesData.cooldowns].find(e => e.name === name);
         return ex ? { ...ex, duration: globalDuration } : null;
       }).filter(Boolean) as Exercise[];
@@ -263,9 +268,12 @@ export default function Home() {
         }
       });
       
-      setSession(combined.slice(0, maxExercises));
+      const limited = combined.slice(0, maxExercises);
+      if (JSON.stringify(limited.map(e => e.name)) !== JSON.stringify(session.map(e => e.name))) {
+        setSession(limited);
+      }
     }
-  }, [favorites, manualSession, selectionMode, globalDuration, maxExercises, isRitualActive]);
+  }, [favorites, manualSession, selectionMode, globalDuration, maxExercises, isRitualActive, session]);
 
   const removeFromSession = (id: string) => {
     const ex = session.find(e => e.id === id);
@@ -387,7 +395,10 @@ export default function Home() {
       }
     } else {
       // Specific Area selected: simple random from that area
-      const areaPool = allPool.filter(ex => ex.bodyArea === selectedArea);
+      const areaPool = allPool.filter(ex => {
+        if (selectedArea === 'Abs') return ex.bodyArea === 'Core';
+        return ex.bodyArea === selectedArea;
+      });
       const fillers = areaPool
         .filter(ex => !finalSession.some(f => f.name === ex.name))
         .sort(() => Math.random() - 0.5)
@@ -1172,7 +1183,7 @@ export default function Home() {
                 </button>
 
                 {/* Area chips */}
-                {['All', 'Upper', 'Lower', 'Core', 'Full'].map(area => (
+                {BODY_AREAS.map(area => (
                   <button
                     key={area}
                     onClick={() => setSelectedArea(area)}
@@ -1231,19 +1242,22 @@ export default function Home() {
                   {noEquip && (
                     <span style={{ fontSize: "0.8rem", background: "rgba(255,255,255,0.1)", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>BODYWEIGHT ONLY</span>
                   )}
+                  {selectedArea !== 'All' && (
+                    <span style={{ fontSize: "0.8rem", background: "var(--accent)", color: "black", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>{selectedArea.toUpperCase()}</span>
+                  )}
                 </div>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.5rem", width: "100%" }}>
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "1rem", width: "100%" }}>
                 <button 
-                  onClick={() => { setSelectedArea('All'); generateSession(); }}
+                  onClick={() => generateSession()}
                   className="button button-shiny"
                   style={{
-                    background: currentAccent,
+                    background: "var(--accent)",
                     color: "black",
-                    padding: "1.2rem 1.5rem",
+                    padding: "1.2rem 2.5rem",
                     borderRadius: "100px",
-                    fontSize: "0.9rem",
+                    fontSize: "1.1rem",
                     fontWeight: "900",
                     letterSpacing: "0.1em",
                     border: "none",
@@ -1251,12 +1265,13 @@ export default function Home() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "0.6rem"
+                    gap: "1rem",
+                    flex: 1
                   }}
                 >
-                  <svg fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style={{ width: "44px", height: "44px" }}>
+                  <svg fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style={{ width: "32px", height: "32px" }}>
                     <g fillRule="evenodd">
-                      <path d="M24.898 100.907a7.97 7.97 0 0 1 8.035-7.935l80.011.623c4.419.034 8.209 3.635 8.466 8.042l.517 8.868 26.68-42.392a7.776 7.776 0 0 1 10.94-2.349l66.996 44.369a8.03 8.03 0 0 1 2.275 11.113l-43.766 66.506c-2.432 3.695-7.447 4.8-11.197 2.47l-51.928-32.265v26.49c0 4.419-3.583 8-7.993 8H32.498a7.949 7.949 0 0 1-7.959-7.998l.36-83.542zm11.828 6.694l-.189 71.811 74.127.073-.035-29.78-5.954-4.119c-1.809-1.25-2.375-3.81-1.257-5.71L111 127l-.466-19.749-73.808.35zM156.483 79L118 138.79l60.965 38.32 37.612-58.539L156.483 79z" />
+                      <path d="M24.898 100.907a7.97 7.97 0 0 1 8.035-7.935l80.011 0.623c4.419 0.034 8.209 3.635 8.466 8.042l0.517 8.868 26.68-42.392a7.776 7.776 0 0 1 10.94-2.349l66.996 44.369a8.03 8.03 0 0 1 2.275 11.113l-43.766 66.506c-2.432 3.695-7.447 4.8-11.197 2.47l-51.928-32.265v26.49c0 4.419-3.583 8-7.993 8H32.498a7.949 7.949 0 0 1-7.959-7.998l0.36-83.542zm11.828 6.694l-0.189 71.811 74.127 0.073-0.035-29.78-5.954-4.119c-1.809-1.25-2.375-3.81-1.257-5.71L111 127l-0.466-19.749-73.808 0.35zM156.483 79L118 138.79l60.965 38.32 37.612-58.539L156.483 79z" />
                       <circle cx="138" cy="135" r="8" />
                       <circle cx="165" cy="130" r="8" />
                       <circle cx="193" cy="125" r="8" />
@@ -1269,6 +1284,28 @@ export default function Home() {
                   </svg>
                   SURPRISE ME
                 </button>
+
+                <button 
+                  onClick={() => setIsAreaModalOpen(true)}
+                  style={{
+                    width: "70px",
+                    height: "70px",
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.2)"
+                  }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                  </svg>
+                </button>
+              </div>
               
               <button 
                 onClick={() => setIsTimeSheetOpen(true)}
@@ -1293,7 +1330,6 @@ export default function Home() {
                 <span>{selectedTime} MINUTE SESSION</span>
               </button>
             </div>
-          </div>
         )}
 
           {(searchQuery.trim() ? availableExercises : (selectionMode === 'surprise' ? session : availableExercises)).map((ex, i) => {
@@ -2718,6 +2754,104 @@ export default function Home() {
           {toastMessage}
         </div>
       )}
+      {/* Area Selection Modal (Surprise Mode) */}
+      {/* Area Selection Modal (Surprise Mode Filter) - PERSISTENT SLIDE SUPPORT */}
+      <div style={{
+        position: "fixed",
+        inset: 0,
+        background: "#050505",
+        zIndex: 6000,
+        display: "flex",
+        flexDirection: "column",
+        color: "white",
+        visibility: isAreaModalOpen ? "visible" : "hidden",
+        transform: isAreaModalOpen ? "translateY(0)" : "translateY(100%)",
+        transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s",
+        willChange: "transform"
+      }}>
+        <header style={{
+          padding: "2rem 1.5rem",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+          <div style={{ flex: 1 }}>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>TARGET AREA</h2>
+            <span style={{ fontSize: "0.6rem", opacity: 0.7, letterSpacing: "0.1em", fontWeight: "900" }}>SURPRISE FILTER</span>
+          </div>
+          <button 
+            onClick={() => setIsAreaModalOpen(false)}
+            style={{
+              width: "56px",
+              height: "56px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.05)",
+              border: "none",
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "1.2rem",
+              cursor: "pointer",
+              fontWeight: "300"
+            }}
+          >✕</button>
+        </header>
+
+        <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem" }} className="no-scrollbar">
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {BODY_AREAS.map(area => (
+              <button
+                key={area}
+                onClick={() => {
+                  setSelectedArea(area);
+                  setIsAreaModalOpen(false);
+                }}
+                style={{
+                  background: selectedArea === area ? "var(--accent)" : "rgba(255,255,255,0.03)",
+                  borderRadius: "1.5rem",
+                  padding: "1.8rem",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                <span style={{ 
+                  fontSize: "1.1rem", 
+                  fontWeight: "900", 
+                  color: selectedArea === area ? "black" : "white",
+                  letterSpacing: "0.05em" 
+                }}>
+                  {area.toUpperCase()}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <footer style={{ padding: "0 1.5rem 4rem" }}>
+          <button 
+            onClick={() => setIsAreaModalOpen(false)}
+            className="button button-shiny"
+            style={{ 
+              width: "100%", 
+              height: "70px", 
+              borderRadius: "999px", 
+              fontWeight: "900", 
+              letterSpacing: "0.2em",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            CONFIRM SELECTION
+          </button>
+        </footer>
+      </div>
     </>
   );
 }
