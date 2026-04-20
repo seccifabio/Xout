@@ -459,6 +459,37 @@ export default function Home() {
     );
   }, [session, hasHydrated, savedRituals]);
 
+  // MET Values for calorie estimation (bodyweight focus)
+  const MET_VALUES: Record<string, number> = {
+    warmup: 3.5,
+    cooldown: 3.0,
+    explosive: 8.0,
+    strength: 5.0,
+    cardio: 7.5,
+    default: 5.5
+  };
+
+  const caloriesBurned = useMemo(() => {
+    if (!hasHydrated || session.length === 0) return 0;
+    const weight = weights.length > 0 ? weights[weights.length - 1].value : 75;
+    
+    // Estimate based on session structure
+    return session.reduce((acc, ex) => {
+      let met = MET_VALUES.default;
+      if (ex.id.startsWith('w')) met = MET_VALUES.warmup;
+      if (ex.id.startsWith('c')) met = MET_VALUES.cooldown;
+      if (ex.highImpact) met = MET_VALUES.explosive;
+      
+      // Formula: (MET * 3.5 * weight / 200) * duration_minutes
+      const durationMin = (ex.duration || 60) / 60;
+      return acc + ((met * 3.5 * weight) / 200) * durationMin;
+    }, 0);
+  }, [session, weights, hasHydrated]);
+
+  const totalSessionDuration = useMemo(() => {
+    return session.reduce((acc, ex) => acc + (ex.duration || 60), 0);
+  }, [session]);
+
   const swapExercise = (index: number) => {
     const filterFunc = (e: any) => {
       const passesEquip = noEquip ? !e.requiresEquipment : true;
@@ -691,6 +722,8 @@ export default function Home() {
             startMainWorkout();
           } else if (isCooldown) {
             setIsCooldown(false);
+            setIsFinished(true);
+            playSuccessSound();
             speak("Cooldown complete. You are ready to go.");
           } else {
             setIsFinished(true);
@@ -2116,23 +2149,34 @@ export default function Home() {
             </h1>
           </div>
 
-          <div style={{ position: "relative", zIndex: 10 }}>
-            <h2 style={{ 
-              fontSize: "6rem", 
+          <div style={{ position: "relative", zIndex: 10, marginTop: "2rem" }}>
+            <div style={{ 
+              fontSize: "0.7rem", 
               fontWeight: "900", 
-              color: "white", 
-              letterSpacing: "-0.05em", 
-              lineHeight: 0.85, 
-              textTransform: "uppercase"
-            }}>COOL</h2>
-            <h2 style={{ 
-              fontSize: "6rem", 
-              fontWeight: "900", 
-              color: "var(--accent)", 
-              letterSpacing: "-0.05em", 
-              lineHeight: 0.85, 
-              textTransform: "uppercase"
-            }}>DOWN</h2>
+              letterSpacing: "0.4em", 
+              opacity: 0.4, 
+              color: "white",
+              marginBottom: "0.5rem"
+            }}>THE VERDICT</div>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: "0.4rem" }}>
+              <h2 style={{ 
+                fontSize: "9rem", 
+                fontWeight: "900", 
+                color: "var(--accent)", 
+                letterSpacing: "-0.04em", 
+                lineHeight: 0.8, 
+                margin: 0 
+              }}>{Math.round(caloriesBurned)}</h2>
+              <span style={{ fontSize: "1.2rem", fontWeight: "900", color: "white", opacity: 0.3 }}>KCAL</span>
+            </div>
+            <div style={{ 
+              marginTop: "1.5rem",
+              fontSize: "0.8rem",
+              fontWeight: "900",
+              color: "white",
+              opacity: 0.8,
+              letterSpacing: "0.1em"
+            }}>OUTSTANDING WORK</div>
           </div>
 
           <div style={{ 
