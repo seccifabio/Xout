@@ -1816,11 +1816,9 @@ export default function Home() {
             }}>
               <div style={{ 
                 height: "100%", 
-                background: (isWarmup || (isPreparing && prepareTime <= 3)) 
-                  ? "white" 
-                  : (isPreparing && prepareTime > 3) 
-                    ? "black" 
-                    : "var(--accent)", 
+                background: (isPreparing && prepareTime <= 3)
+                  ? (isWarmup ? "white" : "black") 
+                  : (isWarmup ? "white" : "var(--accent)"), 
                 width: `${((currentIndex % (session.length || 1)) + 1) / (session.length || 1) * 100}%`,
                 transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
               }} />
