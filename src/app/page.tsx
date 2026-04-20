@@ -2229,7 +2229,7 @@ export default function Home() {
         bottom: 0, 
         left: 0, 
         right: 0, 
-        height: "75vh", 
+        height: "85vh", 
         background: "#111", 
         borderTop: "1px solid rgba(255,255,255,0.1)", 
         borderTopLeftRadius: "3rem", 
