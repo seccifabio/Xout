@@ -937,7 +937,7 @@ export default function Home() {
         padding: "1.2rem 2rem",
         display: "flex",
         flexDirection: "column",
-        gap: "1.2rem",
+        gap: "2.5rem",
         transform: isOptionsOpen ? "translateY(0)" : "translateY(100%)",
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
         willChange: "transform"
@@ -973,7 +973,7 @@ export default function Home() {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
           {/* Favourite Rituals (Bookmark/Saved Workouts) */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8rem", background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "2rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.2rem", background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "2rem" }}>
             <button 
               onClick={() => { setIsOptionsOpen(false); setIsLibraryOpen(true); }}
               style={{
@@ -1002,7 +1002,7 @@ export default function Home() {
           </div>
 
           {/* No Equipment (RESTORED ICON) */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8rem", background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "2rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.2rem", background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "2rem" }}>
             <button 
               onClick={() => setNoEquip(!noEquip)}
               style={{
@@ -1032,7 +1032,7 @@ export default function Home() {
           </div>
 
           {/* Favourites */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8rem", background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "2rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.2rem", background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "2rem" }}>
             <button 
               onClick={() => { setIsOptionsOpen(false); setIsFavoritesOpen(true); }}
               style={{
@@ -1061,7 +1061,7 @@ export default function Home() {
           </div>
 
           {/* Weight Tracker */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8rem", background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "2rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.2rem", background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "2rem" }}>
             <button 
               onClick={() => { setIsOptionsOpen(false); setIsWeightOpen(true); }}
               style={{
