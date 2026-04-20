@@ -2239,11 +2239,11 @@ export default function Home() {
         willChange: "transform"
       }}>
         <header style={{
-          padding: "2rem 1.5rem",
+          padding: "2.2rem 1.5rem",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
+          alignItems: "center",
+          position: "relative"
         }}>
           <div>
             <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>SESSION PARAMETERS</h2>
@@ -2252,6 +2252,10 @@ export default function Home() {
           <button 
             onClick={() => setIsTimeSheetOpen(false)}
             style={{
+              position: "absolute",
+              top: "50%",
+              right: "1.2rem",
+              transform: "translateY(-50%)",
               width: "56px",
               height: "56px",
               borderRadius: "50%",
@@ -2396,6 +2400,7 @@ export default function Home() {
             >
               CONFIRM
             </button>
+        </div>
       </div>
       {/* Manifesto Management Ritual */}
       <div style={{
@@ -2412,11 +2417,11 @@ export default function Home() {
         willChange: "transform"
       }}>
           <header style={{
-            padding: "2rem 1.5rem",
+            padding: "2.2rem 1.5rem",
             borderBottom: "1px solid rgba(255,255,255,0.05)",
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center"
+            alignItems: "center",
+            position: "relative"
           }}>
             <div>
               <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>FAVOURITE MOVEMENTS</h2>
@@ -2425,6 +2430,10 @@ export default function Home() {
             <button 
               onClick={() => setIsFavoritesOpen(false)}
               style={{
+                position: "absolute",
+                top: "50%",
+                right: "1.2rem",
+                transform: "translateY(-50%)",
                 width: "56px",
                 height: "56px",
                 borderRadius: "50%",
@@ -2520,11 +2529,11 @@ export default function Home() {
         willChange: "transform"
       }}>
         <header style={{
-          padding: "2rem 1.5rem",
+          padding: "2.2rem 1.5rem",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
+          alignItems: "center",
+          position: "relative"
         }}>
           <div>
             <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>WEIGHT TRACKER</h2>
@@ -2533,6 +2542,10 @@ export default function Home() {
           <button 
             onClick={() => setIsWeightOpen(false)}
             style={{
+              position: "absolute",
+              top: "50%",
+              right: "1.2rem",
+              transform: "translateY(-50%)",
               width: "56px",
               height: "56px",
               borderRadius: "50%",
@@ -2812,11 +2825,11 @@ export default function Home() {
         willChange: "transform"
       }}>
         <header style={{
-          padding: "2rem 1.5rem",
+          padding: "2.2rem 1.5rem",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
+          alignItems: "center",
+          position: "relative"
         }}>
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>TARGET AREA</h2>
@@ -2825,6 +2838,10 @@ export default function Home() {
           <button 
             onClick={() => setIsAreaModalOpen(false)}
             style={{
+              position: "absolute",
+              top: "50%",
+              right: "1.2rem",
+              transform: "translateY(-50%)",
               width: "56px",
               height: "56px",
               borderRadius: "50%",
