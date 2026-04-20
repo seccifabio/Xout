@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import exercisesData from "../data/exercises.json";
 
-const BODY_AREAS = ['All', 'Upper', 'Lower', 'Abs', 'Core', 'Full'];
+const BODY_AREAS = ['Upper', 'Lower', 'Abs', 'Core', 'Full'];
 
 interface Exercise {
   id: string;
@@ -32,7 +32,9 @@ export default function Home() {
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [isTrayExpanded, setIsTrayExpanded] = useState(false);
   const [isTimeSheetOpen, setIsTimeSheetOpen] = useState(false);
-  const [selectedArea, setSelectedArea] = useState<string>('All');
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [isSurfMode, setIsSurfMode] = useState(false);
+  const [isYogaMode, setIsYogaMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -199,20 +201,29 @@ export default function Home() {
       );
     }
 
-    const basePool = selectedArea === 'Abs' ? exercisesData.exercises : all;
+    const basePool = selectedAreas.includes('Abs') ? exercisesData.exercises : all;
     
     return basePool.filter(ex => {
       if (noEquip && (ex as any).requiresEquipment) return false;
-      if (selectedArea !== 'All') {
+      if (isSurfMode && !(ex as any).surf) return false;
+
+      if (selectedAreas.length > 0) {
         const area = (ex.bodyArea || "").trim();
-        const isAreaMatch = selectedArea === 'Abs' ? (area === 'Core' || area === 'Abs') : area === selectedArea;
-        // If Abs is selected, only show main exercises (no warmups/cooldowns)
-        if (selectedArea === 'Abs') return isAreaMatch && ex.id.startsWith('e');
+        const isAreaMatch = selectedAreas.some(sel => {
+          if (sel === 'Abs') return (area === 'Core' || area === 'Abs');
+          return area === sel;
+        });
+
+        // Special rule for Abs: if only Abs is selected, only show main exercises (no warmups/cooldowns)
+        if (selectedAreas.length === 1 && selectedAreas[0] === 'Abs') {
+          if (!ex.id.startsWith('e')) return false;
+        }
+
         if (!isAreaMatch) return false;
       }
       return true;
     });
-  }, [noEquip, selectedArea, searchQuery]);
+  }, [noEquip, selectedAreas, searchQuery, isSurfMode]);
 
   const [prepareTime, setPrepareTime] = useState(10);
   const [isPaused, setIsPaused] = useState(false);
@@ -377,7 +388,7 @@ export default function Home() {
     let finalSession: Exercise[] = [];
 
     // 2. Balanced Filler Strategy
-    if (selectedArea === 'All') {
+    if (selectedAreas.length === 0) {
       const categories = ['Upper', 'Lower', 'Midsection', 'Full'];
       let catIndex = Math.floor(Math.random() * categories.length);
       
@@ -386,18 +397,17 @@ export default function Home() {
       while (finalSession.length < sessionGoal) {
         const targetCat = categories[catIndex % categories.length];
         
-        // Find pool for this category with robust case-insensitive matching
+        // Find pool for this category
         const catPool = allPool.filter(ex => {
+          if (isSurfMode && !(ex as any).surf) return false;
+          if (isYogaMode && !(ex as any).yoga) return false;
           const area = (ex.bodyArea || "").trim();
           if (targetCat === 'Midsection') return (area === 'Core' || area === 'Abs');
           return area === targetCat;
         }).filter(ex => !finalSession.some(f => f.name === ex.name));
 
         if (catPool.length > 0) {
-          // Check if we have favorites in this specific category bucket
           const catFavs = catPool.filter(ex => favorites.includes(ex.name));
-          
-          // Prioritize picking a favorite if one exists for this category bucket
           const randomEx = catFavs.length > 0
             ? catFavs[Math.floor(Math.random() * catFavs.length)]
             : catPool[Math.floor(Math.random() * catPool.length)];
@@ -409,12 +419,19 @@ export default function Home() {
         if (catIndex > 500) break; 
       }
     } else {
-      // Specific Area selected: only from that area and respect noEquip
+      // Specific Areas selected
       const areaPool = allPool.filter(ex => {
+        if (isSurfMode && !(ex as any).surf) return false;
+        if (isYogaMode && !(ex as any).yoga) return false;
         const area = (ex.bodyArea || "").trim();
-        const isAreaMatch = selectedArea === 'Abs' ? (area === 'Core' || area === 'Abs') : area === selectedArea;
-        // If Abs, only main exercises (id starts with 'e')
-        if (selectedArea === 'Abs') return isAreaMatch && ex.id.startsWith('e');
+        const isAreaMatch = selectedAreas.some(sel => {
+          if (sel === 'Abs') return (area === 'Core' || area === 'Abs');
+          return area === sel;
+        });
+        
+        if (selectedAreas.length === 1 && selectedAreas[0] === 'Abs') {
+          return isAreaMatch && ex.id.startsWith('e');
+        }
         return isAreaMatch;
       });
       const fillers = areaPool
@@ -853,7 +870,9 @@ export default function Home() {
             onClick={() => {
               setSelectionMode('surprise');
               clearSession();
-              setSelectedArea('All');
+              setSelectedAreas([]);
+              setIsSurfMode(false);
+              setIsYogaMode(false);
               setSearchQuery("");
             }}
             style={{ 
@@ -1243,28 +1262,35 @@ export default function Home() {
                 </button>
 
                 {/* Area chips */}
-                {BODY_AREAS.map(area => (
-                  <button
-                    key={area}
-                    onClick={() => setSelectedArea(area)}
-                    style={{
-                      background: selectedArea === area ? (selectionMode === 'manual' ? "rgba(0,0,0,0.3)" : "black") : (selectionMode === 'manual' ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)"),
-                      color: selectedArea === area ? (selectionMode === 'manual' ? "black" : currentAccent) : (selectionMode === 'manual' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)"),
-                      border: selectionMode === 'manual' ? (selectedArea === area ? "1.5px solid black" : "1px solid rgba(0,0,0,0.15)") : "none",
-                      padding: "0.8rem 1.8rem",
-                      fontSize: "0.85rem",
-                      fontWeight: "700",
-                      borderRadius: "100px",
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                      letterSpacing: "0.1em",
-                      transition: "all 0.2s",
-                      flexShrink: 0
-                    }}
-                  >
-                    {area}
-                  </button>
-                ))}
+                {BODY_AREAS.map(area => {
+                  const isSelected = selectedAreas.includes(area);
+                  return (
+                    <button
+                      key={area}
+                      onClick={() => {
+                        setSelectedAreas(prev => 
+                          prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area]
+                        );
+                      }}
+                      style={{
+                        background: isSelected ? (selectionMode === 'manual' ? "rgba(0,0,0,0.3)" : "black") : (selectionMode === 'manual' ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)"),
+                        color: isSelected ? (selectionMode === 'manual' ? "black" : currentAccent) : (selectionMode === 'manual' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)"),
+                        border: selectionMode === 'manual' ? (isSelected ? "1.5px solid black" : "1px solid rgba(0,0,0,0.15)") : "none",
+                        padding: "0.8rem 1.8rem",
+                        fontSize: "0.85rem",
+                        fontWeight: "700",
+                        borderRadius: "100px",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        letterSpacing: "0.1em",
+                        transition: "all 0.2s",
+                        flexShrink: 0
+                      }}
+                    >
+                      {area}
+                    </button>
+                  );
+                })}
               </div>
             )}
             </div>
@@ -1289,7 +1315,7 @@ export default function Home() {
               alignItems: "center", 
               justifyContent: "center", 
               flex: 1,
-              gap: "2.5rem",
+              gap: "1.5rem",
               textAlign: "center",
               paddingTop: "6rem"
             }} className="animate">
@@ -1298,17 +1324,29 @@ export default function Home() {
                   <span style={{ fontSize: "2.4rem", color: "rgba(255,255,255,0.2)", display: "block", marginBottom: "0.2rem" }}>Skip the excuses.</span>
                   Not the workout.
                 </h2>
-                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginTop: "0.5rem" }}>
+                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", marginTop: "0.5rem", flexWrap: "wrap" }}>
                   {noEquip && (
                     <span style={{ fontSize: "0.8rem", background: "rgba(255,255,255,0.1)", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>BODYWEIGHT ONLY</span>
                   )}
-                  {selectedArea !== 'All' && (
-                    <span style={{ fontSize: "0.8rem", background: "var(--accent)", color: "black", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>{selectedArea.toUpperCase()}</span>
+                  {isSurfMode && (
+                    <span style={{ fontSize: "0.8rem", background: "#00E0FF", color: "black", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>SURF MODE</span>
+                  )}
+                  {isYogaMode && (
+                    <span style={{ fontSize: "0.8rem", background: "#BD00FF", color: "white", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>RECOVERY MODE</span>
+                  )}
+                  {selectedAreas.length === 0 ? (
+                    (!isSurfMode && !isYogaMode) && (
+                      <span style={{ fontSize: "0.8rem", background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>ALL AREAS</span>
+                    )
+                  ) : (
+                    selectedAreas.map(area => (
+                      <span key={area} style={{ fontSize: "0.8rem", background: "var(--accent)", color: "black", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>{area.toUpperCase()}</span>
+                    ))
                   )}
                 </div>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "1.2rem" }}>
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "1.2rem", marginTop: "2.5rem" }}>
                 <button 
                   onClick={() => generateSession()}
                   className="button button-shiny"
@@ -2918,7 +2956,7 @@ export default function Home() {
         inset: 0,
         background: "#050505",
         zIndex: 6000,
-        padding: "1.2rem 2rem",
+        padding: "1.2rem 2rem 0",
         display: "flex",
         flexDirection: "column",
         gap: "2.5rem",
@@ -2961,39 +2999,134 @@ export default function Home() {
         </header>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem" }} className="no-scrollbar">
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {BODY_AREAS.map(area => (
-              <button
-                key={area}
+          {/* Specialized Mode Toggles */}
+          <div style={{ display: "flex", justifyContent: "center", gap: "2rem", marginBottom: "2.5rem" }}>
+            {/* Surf Mode */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <button 
                 onClick={() => {
-                  setSelectedArea(area);
-                  setIsAreaModalOpen(false);
+                  setIsSurfMode(!isSurfMode);
+                  if (!isSurfMode) setIsYogaMode(false);
                 }}
                 style={{
-                  background: selectedArea === area ? "var(--accent)" : "rgba(255,255,255,0.03)",
-                  borderRadius: "1.5rem",
-                  padding: "1.8rem",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  background: isSurfMode ? "#00E0FF" : "rgba(255,255,255,0.05)",
                   border: "none",
+                  color: isSurfMode ? "black" : "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   cursor: "pointer",
-                  transition: "all 0.2s"
+                  transition: "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  boxShadow: isSurfMode ? "0 10px 30px rgba(0, 224, 255, 0.4)" : "none",
+                  transform: isSurfMode ? "scale(1.05)" : "scale(1)"
                 }}
               >
-                <span style={{ 
-                  fontSize: "1.1rem", 
-                  fontWeight: "900", 
-                  color: selectedArea === area ? "black" : "white",
-                  letterSpacing: "0.05em" 
-                }}>
-                  {area.toUpperCase()}
-                </span>
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 17c.6.5 1.2 1 2.5 1 2.7 0 4.5-2 4.5-2s1.8 2 4.5 2 4.5-2 4.5-2 1.8 2 4.5 2 1.9-.5 2.5-1M2 12c.6.5 1.2 1 2.5 1 2.7 0 4.5-2 4.5-2s1.8 2 4.5 2 4.5-2 4.5-2 1.8 2 4.5 2 1.9-.5 2.5-1M2 7c2.7 0 4.5 2 4.5 2s1.8-2 4.5-2 4.5 2 4.5 2 1.8-2 4.5-2 4.5 2 4.5 2" />
+                </svg>
               </button>
-            ))}
+              <span style={{ marginTop: "0.8rem", fontSize: "0.6rem", fontWeight: "900", color: isSurfMode ? "#00E0FF" : "white", letterSpacing: "0.2em", opacity: isSurfMode ? 1 : 0.4 }}>SURF</span>
+            </div>
+
+            {/* Yoga Mode */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <button 
+                onClick={() => {
+                  setIsYogaMode(!isYogaMode);
+                  if (!isYogaMode) setIsSurfMode(false);
+                }}
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  background: isYogaMode ? "#BD00FF" : "rgba(255,255,255,0.05)",
+                  border: "none",
+                  color: isYogaMode ? "white" : "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  boxShadow: isYogaMode ? "0 10px 30px rgba(189, 0, 255, 0.4)" : "none",
+                  transform: isYogaMode ? "scale(1.05)" : "scale(1)"
+                }}
+              >
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 10c0-4.418 3.582-8 8-8v8h-8zM12 10c0 4.418-3.582 8-8 8V10h8zM12 10c4.418 0 8 3.582 8 8h-8V10zM12 10c-4.418 0-8-3.582-8-8h8v10z" />
+                </svg>
+              </button>
+              <span style={{ marginTop: "0.8rem", fontSize: "0.6rem", fontWeight: "900", color: isYogaMode ? "#BD00FF" : "white", letterSpacing: "0.2em", opacity: isYogaMode ? 1 : 0.4 }}>RECOVERY</span>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {BODY_AREAS.map(area => {
+              const isSelected = selectedAreas.includes(area);
+              return (
+                <button
+                  key={area}
+                  onClick={() => {
+                    setSelectedAreas(prev => 
+                      prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area]
+                    );
+                  }}
+                  style={{
+                    background: isSelected ? "var(--accent)" : "rgba(255,255,255,0.03)",
+                    borderRadius: "1.5rem",
+                    padding: "1.8rem",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    border: isSelected ? "none" : "1px solid rgba(255,255,255,0.02)",
+                    cursor: "pointer",
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    transform: isSelected ? "scale(1.02)" : "scale(1)"
+                  }}
+                >
+                  <span style={{ 
+                    fontSize: "1.1rem", 
+                    fontWeight: "900", 
+                    color: isSelected ? "black" : "white",
+                    letterSpacing: "0.05em" 
+                  }}>
+                    {area.toUpperCase()}
+                  </span>
+                  {isSelected && (
+                    <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "black", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
+        <footer style={{ 
+          padding: "1.5rem 2rem 3rem", 
+          background: "linear-gradient(to top, #050505 80%, transparent)",
+          borderTop: "1px solid rgba(255,255,255,0.05)"
+        }}>
+          <button 
+            onClick={() => setIsAreaModalOpen(false)}
+            className="button button-shiny"
+            style={{ 
+              width: "100%", 
+              height: "70px", 
+              borderRadius: "999px", 
+              fontWeight: "900", 
+              letterSpacing: "0.2em",
+              fontSize: "1.1rem"
+            }}
+          >
+            CONFIRM
+          </button>
+        </footer>
       </div>
     </>
   );
