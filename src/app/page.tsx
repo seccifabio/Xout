@@ -192,7 +192,9 @@ export default function Home() {
       );
     }
 
-    return all.filter(ex => {
+    const basePool = selectedArea === 'Abs' ? exercisesData.exercises : all;
+    
+    return basePool.filter(ex => {
       if (noEquip && (ex as any).requiresEquipment) return false;
       if (selectedArea !== 'All') {
         const area = (ex.bodyArea || "").trim();
@@ -399,7 +401,7 @@ export default function Home() {
       }
     } else {
       // Specific Area selected: simple random from that area
-      const areaPool = allPool.filter(ex => {
+      const areaPool = (selectedArea === 'Abs' ? exercisesData.exercises : allPool).filter(ex => {
         const area = (ex.bodyArea || "").trim();
         if (selectedArea === 'Abs') return area === 'Core' || area === 'Abs';
         return area === selectedArea;
@@ -1253,30 +1255,28 @@ export default function Home() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "1.5rem", width: "100%" }}>
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "10px" }}>
                 <button 
                   onClick={() => generateSession()}
                   className="button button-shiny"
                   style={{
                     background: "var(--accent)",
                     color: "black",
-                    width: "110px",
-                    height: "110px",
-                    borderRadius: "50%",
-                    fontSize: "0.75rem",
+                    padding: "1.2rem 1.8rem",
+                    borderRadius: "100px",
+                    fontSize: "1rem",
                     fontWeight: "900",
                     letterSpacing: "0.1em",
                     border: "none",
                     cursor: "pointer",
                     display: "flex",
-                    flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "0.5rem",
-                    boxShadow: "0 10px 30px rgba(218, 255, 0, 0.3)"
+                    gap: "0.8rem",
+                    height: "70px"
                   }}
                 >
-                  <svg fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style={{ width: "24px", height: "24px" }}>
+                  <svg fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style={{ width: "28px", height: "28px" }}>
                     <g fillRule="evenodd">
                       <path d="M24.898 100.907a7.97 7.97 0 0 1 8.035-7.935l80.011 0.623c4.419 0.034 8.209 3.635 8.466 8.042l0.517 8.868 26.68-42.392a7.776 7.776 0 0 1 10.94-2.349l66.996 44.369a8.03 8.03 0 0 1 2.275 11.113l-43.766 66.506c-2.432 3.695-7.447 4.8-11.197 2.47l-51.928-32.265v26.49c0 4.419-3.583 8-7.993 8H32.498a7.949 7.949 0 0 1-7.959-7.998l0.36-83.542zm11.828 6.694l-0.189 71.811 74.127 0.073-0.035-29.78-5.954-4.119c-1.809-1.25-2.375-3.81-1.257-5.71L111 127l-0.466-19.749-73.808 0.35zM156.483 79L118 138.79l60.965 38.32 37.612-58.539L156.483 79z" />
                       <circle cx="138" cy="135" r="8" />
