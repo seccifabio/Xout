@@ -198,8 +198,10 @@ export default function Home() {
       if (noEquip && (ex as any).requiresEquipment) return false;
       if (selectedArea !== 'All') {
         const area = (ex.bodyArea || "").trim();
-        const isTargetArea = selectedArea === 'Abs' ? (area === 'Core' || area === 'Abs') : area === selectedArea;
-        if (!isTargetArea) return false;
+        const isAreaMatch = selectedArea === 'Abs' ? (area === 'Core' || area === 'Abs') : area === selectedArea;
+        // If Abs is selected, only show main exercises (no warmups/cooldowns)
+        if (selectedArea === 'Abs') return isAreaMatch && ex.id.startsWith('e');
+        if (!isAreaMatch) return false;
       }
       return true;
     });
@@ -400,11 +402,13 @@ export default function Home() {
         if (catIndex > 500) break; 
       }
     } else {
-      // Specific Area selected: simple random from that area
-      const areaPool = (selectedArea === 'Abs' ? exercisesData.exercises : allPool).filter(ex => {
+      // Specific Area selected: only from that area and respect noEquip
+      const areaPool = allPool.filter(ex => {
         const area = (ex.bodyArea || "").trim();
-        if (selectedArea === 'Abs') return area === 'Core' || area === 'Abs';
-        return area === selectedArea;
+        const isAreaMatch = selectedArea === 'Abs' ? (area === 'Core' || area === 'Abs') : area === selectedArea;
+        // If Abs, only main exercises (id starts with 'e')
+        if (selectedArea === 'Abs') return isAreaMatch && ex.id.startsWith('e');
+        return isAreaMatch;
       });
       const fillers = areaPool
         .filter(ex => !finalSession.some(f => f.name === ex.name))
@@ -2234,9 +2238,40 @@ export default function Home() {
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
         willChange: "transform"
       }}>
-            <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "2px", margin: "0 auto", marginBottom: "0.5rem" }} />
-            
-            <section>
+        <header style={{
+          padding: "2rem 1.5rem",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+          <div>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "-0.02em" }}>SESSION PARAMETERS</h2>
+            <span style={{ fontSize: "0.6rem", opacity: 0.7, letterSpacing: "0.1em", fontWeight: "900" }}>RITUAL CONFIG</span>
+          </div>
+          <button 
+            onClick={() => setIsTimeSheetOpen(false)}
+            style={{
+              width: "56px",
+              height: "56px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.05)",
+              border: "none",
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              fontWeight: "300"
+            }}
+          >
+            ✕
+          </button>
+        </header>
+
+        <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem" }} className="no-scrollbar">
+          <section>
               <h4 style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "white", opacity: 0.8, letterSpacing: "0.2em", marginBottom: "1rem" }}>Session Duration (MIN)</h4>
               <div 
                 style={{ 
