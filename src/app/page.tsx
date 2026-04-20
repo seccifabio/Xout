@@ -81,6 +81,13 @@ export default function Home() {
     // PREVIEW RITUAL: Jump straight to post-workout states
     const params = new URLSearchParams(window.location.search);
     if (params.get('preview') === 'well-done') {
+      // Inject some mock session data for high-fidelity preview
+      setSession([
+        { id: 'e1', name: 'Explosive Sprints', reps: '30s', highImpact: true, desc: 'HIIT' },
+        { id: 'e2', name: 'Pushups', reps: '20', highImpact: false, desc: 'Strength' },
+        { id: 'e3', name: 'Burpees', reps: '15', highImpact: true, desc: 'HIIT' }
+      ]);
+      setTotalRounds(4);
       setIsFinished(true);
     }
   }, []);
@@ -474,7 +481,7 @@ export default function Home() {
     const weight = weights.length > 0 ? weights[weights.length - 1].value : 75;
     
     // Estimate based on session structure
-    return session.reduce((acc, ex) => {
+    const baseCalories = session.reduce((acc, ex) => {
       let met = MET_VALUES.default;
       if (ex.id.startsWith('w')) met = MET_VALUES.warmup;
       if (ex.id.startsWith('c')) met = MET_VALUES.cooldown;
@@ -484,7 +491,10 @@ export default function Home() {
       const durationMin = (ex.duration || 60) / 60;
       return acc + ((met * 3.5 * weight) / 200) * durationMin;
     }, 0);
-  }, [session, weights, hasHydrated]);
+
+    // Account for multiple rounds in the main ritual
+    return baseCalories * totalRounds;
+  }, [session, weights, hasHydrated, totalRounds]);
 
   const totalSessionDuration = useMemo(() => {
     return session.reduce((acc, ex) => acc + (ex.duration || 60), 0);
@@ -859,13 +869,15 @@ export default function Home() {
               position: "relative", 
               zIndex: 10 
             }}>X</span>
-            <span style={{ overflow: "hidden", display: "inline-flex", paddingRight: "1.5rem" }}>
+            <span style={{ overflow: "visible", display: "inline-flex" }}>
               <span 
                 data-text="OUT"
                 className="logo-out-animate logo-text-shiny-ritual"
                 style={{ 
                   color: selectionMode === 'manual' ? "#000000" : "#daff00",
-                  '--logo-base-color': selectionMode === 'manual' ? "#000000" : "#daff00"
+                  '--logo-base-color': selectionMode === 'manual' ? "#000000" : "#daff00",
+                  paddingRight: "0.15em",
+                  fontStyle: "italic"
                 } as any}
               >
                 OUT
@@ -2100,13 +2112,15 @@ export default function Home() {
             }}
           >
             <span style={{ color: "white", position: "relative", zIndex: 10 }}>X</span>
-            <span style={{ overflow: "hidden", display: "inline-flex", paddingRight: "1.5rem" }}>
+            <span style={{ overflow: "visible", display: "inline-flex" }}>
               <span 
                 data-text="OUT"
                 className="logo-out-animate logo-text-shiny-ritual"
                 style={{ 
                   color: "#daff00",
-                  '--logo-base-color': "#daff00"
+                  '--logo-base-color': "#daff00",
+                  paddingRight: "0.15em",
+                  fontStyle: "italic"
                 } as any}
               >
                 OUT
@@ -2127,129 +2141,149 @@ export default function Home() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: "4rem",
           padding: "2rem",
           textAlign: "center",
           overflow: "hidden"
         }} className="animate-fade">
-          {/* Background Image with Alpha */}
+          {/* Cinematic Background Ritual */}
           <div style={{
             position: "absolute",
             top: 0, left: 0, right: 0, bottom: 0,
             background: "url('/Background.jpeg') center/cover no-repeat",
-            opacity: 0.2, // alpha
+            opacity: 0.15,
             zIndex: 1,
-            pointerEvents: "none"
+            pointerEvents: "none",
+            filter: "grayscale(100%) brightness(0.5)"
           }} />
 
-          {/* Logo at top */}
-          <div style={{ position: "relative", zIndex: 10 }}>
-            <h1 className="title" style={{ fontSize: "4.5rem", color: "white", margin: 0 }}>
-              x<span style={{ color: "var(--accent)" }}>out</span>
-            </h1>
-          </div>
-
-          <div style={{ position: "relative", zIndex: 10, marginTop: "2rem" }}>
-            <div style={{ 
-              fontSize: "0.7rem", 
-              fontWeight: "900", 
-              letterSpacing: "0.4em", 
-              opacity: 0.4, 
+          {/* Close Ritual Button - Top Right Corner */}
+          <button 
+            onClick={() => { setIsFinished(false); stopSession(); }}
+            style={{
+              position: "absolute",
+              top: "1.2rem",
+              right: "1.2rem",
+              width: "56px",
+              height: "56px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.05)",
+              border: "none",
               color: "white",
-              marginBottom: "0.5rem"
-            }}>THE VERDICT</div>
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 100,
+              cursor: "pointer"
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+
+          {/* THE CALORIE TERMINAL - BORDERLESS */}
+          <div style={{ 
+            position: "relative", 
+            zIndex: 10, 
+            width: "100%", 
+            maxWidth: "360px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center"
+          }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: "0.4rem" }}>
               <h2 style={{ 
-                fontSize: "9rem", 
+                fontSize: "12rem", 
                 fontWeight: "900", 
                 color: "var(--accent)", 
                 letterSpacing: "-0.04em", 
                 lineHeight: 0.8, 
-                margin: 0 
+                margin: 0,
+                filter: "drop-shadow(0 0 40px rgba(218, 255, 0, 0.3))"
               }}>{Math.round(caloriesBurned)}</h2>
-              <span style={{ fontSize: "1.2rem", fontWeight: "900", color: "white", opacity: 0.3 }}>KCAL</span>
+              <span style={{ fontSize: "1.6rem", fontWeight: "900", color: "white", opacity: 0.4 }}>KCAL</span>
             </div>
+            
+            {/* TOTAL SESSION TIME RITUAL */}
             <div style={{ 
-              marginTop: "1.5rem",
-              fontSize: "0.8rem",
+              marginTop: "2.5rem",
+              fontSize: "1rem",
               fontWeight: "900",
               color: "white",
-              opacity: 0.8,
-              letterSpacing: "0.1em"
-            }}>OUTSTANDING WORK</div>
+              opacity: 0.9,
+              letterSpacing: "0.4em"
+            }}>{Math.floor((totalSessionDuration * totalRounds) / 60)}:{( (totalSessionDuration * totalRounds) % 60).toString().padStart(2, '0')} TOTAL TIME</div>
           </div>
 
+          {/* PRIMARY ACTIONS RITUAL */}
           <div style={{ 
             position: "relative", 
             zIndex: 10, 
             display: "flex", 
-            flexDirection: "row", 
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "2rem" 
+            flexDirection: "column",
+            width: "100%",
+            maxWidth: "280px",
+            gap: "1rem",
+            marginTop: "3rem"
           }}>
-            {/* Skip Circle Button - Left */}
-            <button 
-              onClick={() => { setIsFinished(false); stopSession(); }}
-              style={{
-                width: "65px",
-                height: "65px",
-                borderRadius: "50%",
-                background: "rgba(255,255,255,0.05)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.2)",
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <button 
+                onClick={startCooldown}
+                style={{
+                  flex: 1,
+                  height: "88px",
+                  borderRadius: "100px",
+                  background: "var(--accent)",
+                  color: "black",
+                  border: "none",
+                  fontWeight: "900",
+                  fontSize: "1rem",
+                  letterSpacing: "0.15em",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 10px 40px rgba(218, 255, 0, 0.2)"
+                }}
+              >
+                COOL DOWN
+              </button>
+            </div>
+
+            {/* SAVE WORKOUT BUTTON AS TILE ACTION */}
+            {isCurrentSessionSaved ? (
+              <div style={{ 
+                height: "64px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                cursor: "pointer"
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-
-            {/* Play Circle Button - Center/Primary */}
-            <button 
-              onClick={startCooldown}
-              style={{
-                width: "84px",
-                height: "84px",
-                borderRadius: "50%",
-                background: "var(--accent)",
-                color: "black",
-                border: "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                boxShadow: "0 10px 40px rgba(218, 255, 0, 0.3)"
-              }}
-            >
-              <svg width="45" height="45" viewBox="0 0 24 24" fill="black">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </button>
-          </div>
-
-          {/* SAVE STATUS RITUAL */}
-          <div style={{ position: "relative", zIndex: 10, marginTop: "1rem" }}>
-            {isCurrentSessionSaved ? null : (
+                color: "var(--accent)",
+                fontSize: "0.75rem",
+                fontWeight: "900",
+                letterSpacing: "0.2em",
+                opacity: 0.8
+              }}>
+                RITUAL ARCHIVED ✓
+              </div>
+            ) : (
               <button 
                 onClick={saveWorkout}
                 style={{ 
-                  background: "none", 
-                  border: "none", 
-                  color: "rgba(255,255,255,0.4)", 
-                  fontSize: "0.8rem", 
+                  height: "64px",
+                  background: "rgba(255,255,255,0.04)", 
+                  border: "1px solid rgba(255,255,255,0.08)", 
+                  borderRadius: "100px",
+                  color: "rgba(255,255,255,0.6)", 
+                  fontFamily: "inherit",
+                  fontSize: "0.75rem",
                   fontWeight: "900",
+                  letterSpacing: "0.15em",
                   cursor: "pointer",
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase"
+                  transition: "all 0.2s"
                 }}
               >
-                DID YOU LIKE IT? <span style={{ color: "var(--accent)", borderBottom: "1.5px solid var(--accent)" }}>SAVE WORKOUT</span>
+                SAVE WORKOUT RITUAL
               </button>
             )}
           </div>

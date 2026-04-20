@@ -1,0 +1,121 @@
++  const [showVerdictPreview, setShowVerdictPreview] = useState(false);
++  
++  useEffect(() => {
++    if (typeof window !== 'undefined') {
++      const params = new URLSearchParams(window.location.search);
++      if (params.get('view') === 'verdict') setShowVerdictPreview(true);
++    }
++  }, []);
++
++  
++  // MET Values for calorie estimation (bodyweight focus)
++  const MET_VALUES: Record<string, number> = {
++    warmup: 3.5,
++    cooldown: 3.0,
++    explosive: 8.0,
++    strength: 5.0,
++    cardio: 7.5,
++    default: 5.5
++  };
++
++    setElapsedTime(0);
++    setTimeLeft(30);
++  const caloriesBurned = useMemo(() => {
++    if (!hasHydrated || session.length === 0) return 0;
++    const weight = weights.length > 0 ? weights[weights.length - 1].value : 75;
++    
++    // Estimate based on session structure
++    return session.reduce((acc, ex) => {
++      let met = MET_VALUES.default;
++      if (ex.id.startsWith('w')) met = MET_VALUES.warmup;
++      if (ex.id.startsWith('c')) met = MET_VALUES.cooldown;
++      if (ex.highImpact) met = MET_VALUES.explosive;
++      
++      // Formula: (MET * 3.5 * weight / 200) * duration_minutes
++      const durationMin = (ex.duration || 60) / 60;
++      return acc + ((met * 3.5 * weight) / 200) * durationMin;
++    }, 0);
++  }, [session, weights, hasHydrated]);
++
++  const totalSessionDuration = useMemo(() => {
++    return session.reduce((acc, ex) => acc + (ex.duration || 60), 0);
++  }, [session]);
++
++
++    if (isPaused) return "#333";
++    
++    // Flash background colors based on mode
++    if (isWarmup) return "#ff6b00";
++    if (isCooldown) return "#007bff";
++    const mins = Math.floor(seconds / 60);
++    const secs = Math.round(seconds % 60);
++    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
++  const skipCurrent = () => {
++    setTimeLeft(0);
++    setPrepareTime(0);
++  };
++    <main style={{ 
++      minHeight: "100vh", 
++      background: "black", 
++      color: "white", 
++      fontFamily: "'Inter', sans-serif",
++      position: "relative",
++      overflowX: "hidden",
++      paddingTop: "env(safe-area-inset-top)"
++    }}>
++      
++      {/* Cinematic Splash Portal */}
++          inset: 0,
++          zIndex: 9999,
++          transition: "opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
++          opacity: isSplashExiting ? 0 : 1,
++          pointerEvents: isSplashExiting ? "none" : "all"
++        }}>
++          {/* Background Split Ritual */}
++            inset: 0,
++            transition: "transform 1.2s cubic-bezier(0.7, 0, 0.3, 1)",
++            transform: isSplashExiting ? "scale(1.1)" : "scale(1)"
++            <div style={{ 
++              flex: 1, 
++              background: "#050505", 
++              transition: "transform 1s cubic-bezier(0.7, 0, 0.3, 1)",
++              transform: isSplashExiting ? "translateX(-100%)" : "translateX(0)"
++            }} />
++            <div style={{ 
++              flex: 1, 
++              background: "#080808",
++              transition: "transform 1s cubic-bezier(0.7, 0, 0.3, 1)",
++              transform: isSplashExiting ? "translateX(100%)" : "translateX(0)"
++            }} />
++          <div style={{ 
++            position: "relative",
++            flexDirection: "column",
++            gap: "1.5rem"
++            {/* Logo Aperture */}
++            <div style={{
++              width: "120px",
++              height: "120px",
++              position: "relative",
++              display: "flex",
++              alignItems: "center",
++              justifyContent: "center"
++            }}>
++              <div className="aperture-ring" style={{
++                position: "absolute",
++                inset: 0,
++                border: "2px solid var(--accent)",
++                borderRadius: "50%",
++                opacity: 0.2,
++                transform: isSplashExiting ? "scale(2)" : "scale(1)",
++                transition: "transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)"
++              }} />
++              
++              <svg 
++                viewBox="0 0 100 100" 
++                style={{ 
++                  width: "60px", 
++                  fill: "var(--accent)",
++                  filter: "drop-shadow(0 0 20px rgba(218, 255, 0, 0.4))",
++                  opacity: isSplashExiting ? 0 : 1,
++                  transform: isSplashExiting ? "scale(0.8)" : "scale(1)",
++                  transition: "all 0.8s' },files:[{content:
