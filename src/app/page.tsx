@@ -1806,20 +1806,22 @@ export default function Home() {
           position: "relative"
         }}>
           {/* Round Progress Ritual - Persistent across movement and recovery */}
-          <div style={{ 
-            position: "absolute", 
-            top: 0, left: 0, right: 0, 
-            height: "4px", 
-            background: "rgba(255,255,255,0.1)",
-            zIndex: 100 
-          }}>
+          {!(currentIndex === 0 && isPreparing) && (
             <div style={{ 
-              height: "100%", 
-              background: "var(--accent)", 
-              width: `${((currentIndex % (session.length || 1)) + 1) / (session.length || 1) * 100}%`,
-              transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
-            }} />
-          </div>
+              position: "absolute", 
+              top: 0, left: 0, right: 0, 
+              height: "4px", 
+              background: "rgba(255,255,255,0.1)",
+              zIndex: 100 
+            }}>
+              <div style={{ 
+                height: "100%", 
+                background: (isWarmup || (isPreparing && prepareTime <= 3)) ? "white" : "var(--accent)", 
+                width: `${((currentIndex % (session.length || 1)) + 1) / (session.length || 1) * 100}%`,
+                transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
+              }} />
+            </div>
+          )}
           <div style={{ 
             textAlign: "center", 
             flex: 1, 
@@ -2239,6 +2241,10 @@ export default function Home() {
         gap: "1.2rem",
         overflowY: "auto",
         WebkitOverflowScrolling: "touch",
+        padding: "1.2rem 2rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "2.5rem",
         transform: isTimeSheetOpen ? "translateY(0)" : "translateY(100%)",
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
         willChange: "transform"
@@ -2267,8 +2273,8 @@ export default function Home() {
           ✕
         </button>
         <header style={{
-          padding: "2.2rem 1.5rem",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
+
+
           display: "flex",
           alignItems: "center"
         }}>
@@ -2524,9 +2530,10 @@ export default function Home() {
         inset: 0,
         background: "#050505",
         zIndex: 3000,
+        padding: "1.2rem 2rem",
         display: "flex",
         flexDirection: "column",
-        color: "white",
+        gap: "2.5rem",
         visibility: isWeightOpen ? "visible" : "hidden",
         transform: isWeightOpen ? "translateY(0)" : "translateY(100%)",
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s",
@@ -2671,27 +2678,44 @@ export default function Home() {
         background: "#050505",
         zIndex: 3000,
         display: "flex",
+        padding: "1.2rem 2rem",
+        display: "flex",
         flexDirection: "column",
-        color: "white",
+        gap: "2.5rem",
         visibility: isLibraryOpen ? "visible" : "hidden",
         transform: isLibraryOpen ? "translateY(0)" : "translateY(100%)",
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s",
         willChange: "transform"
       }}>
+        <button 
+          onClick={() => setIsLibraryOpen(false)}
+          style={{
+            position: "absolute",
+            top: "1.2rem",
+            right: "1.2rem",
+            width: "56px",
+            height: "56px",
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.05)",
+            border: "none",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            fontSize: "1.2rem",
+            fontWeight: "300",
+            zIndex: 10
+          }}
+        >
+          ✕
+        </button>
           <header style={{
-            padding: "2rem 1.5rem",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center"
           }}>
             <h2 style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "0.15em", color: "white", margin: 0 }}>YOUR WORKOUT</h2>
-            <button 
-              onClick={() => setIsLibraryOpen(false)}
-              style={{ background: "none", border: "none", color: "white", fontSize: "1.5rem", fontWeight: "300", cursor: "pointer", opacity: 0.5 }}
-            >
-              ✕
-            </button>
           </header>
 
           <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem 0", display: "flex", flexDirection: "column", gap: "1rem" }} className="no-scrollbar">
@@ -2819,9 +2843,10 @@ export default function Home() {
         inset: 0,
         background: "#050505",
         zIndex: 6000,
+        padding: "1.2rem 2rem",
         display: "flex",
         flexDirection: "column",
-        color: "white",
+        gap: "2.5rem",
         visibility: isAreaModalOpen ? "visible" : "hidden",
         transform: isAreaModalOpen ? "translateY(0)" : "translateY(100%)",
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s",
