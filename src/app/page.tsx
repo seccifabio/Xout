@@ -2395,7 +2395,7 @@ export default function Home() {
                 setIsTimeSheetOpen(false);
               }}
               style={{ 
-                marginTop: "auto", 
+                marginTop: "3.5rem", 
                 height: "70px", 
                 width: "100%",
                 borderRadius: "999px",
