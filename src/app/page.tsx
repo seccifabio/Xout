@@ -840,7 +840,7 @@ export default function Home() {
             </span>
           </h1>
 
-          <div style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "1.2rem", alignItems: "center" }}>
             <button
               onClick={() => {
                 const nextMode = selectionMode === 'surprise' ? 'manual' : 'surprise';
@@ -1263,7 +1263,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "1.2rem" }}>
                 <button 
                   onClick={() => generateSession()}
                   className="button button-shiny"
