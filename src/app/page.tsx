@@ -828,11 +828,12 @@ export default function Home() {
 
   const currentBackground = () => {
     if (isPreparing && prepareTime <= 3) {
-      return isWarmup ? "#ff6b00" : "var(--accent)";
+      if (isWarmup) return "#ff6b00";
+      return "#daff00";
     }
     
     // Manual mode (Cockpit) uses Volt Green when not training/preparing
-    if (selectionMode === 'manual' && !isTraining && !isPreparing) return "var(--accent)";
+    if (selectionMode === 'manual' && !isTraining && !isPreparing) return "#daff00";
     
     return "black";
   };
@@ -1276,6 +1277,56 @@ export default function Home() {
                   </svg>
                 </button>
 
+                {/* Specialized Mode Chips (Manual Only) */}
+                {selectionMode === 'manual' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setIsSurfMode(!isSurfMode);
+                        if (!isSurfMode) setIsYogaMode(false);
+                      }}
+                      style={{
+                        background: isSurfMode ? "rgba(0, 251, 255, 0.6)" : "rgba(0, 251, 255, 0.2)",
+                        color: isSurfMode ? "black" : "rgba(0, 0, 0, 0.4)",
+                        border: "1px solid rgba(0, 0, 0, 0.1)",
+                        padding: "0.8rem 1.8rem",
+                        fontSize: "0.85rem",
+                        fontWeight: "700",
+                        borderRadius: "100px",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        letterSpacing: isSurfMode ? "0.2em" : "0.15em",
+                        transition: "all 0.2s",
+                        flexShrink: 0
+                      }}
+                    >
+                      SURF
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsYogaMode(!isYogaMode);
+                        if (!isYogaMode) setIsSurfMode(false);
+                      }}
+                      style={{
+                        background: isYogaMode ? "rgba(224, 0, 255, 0.6)" : "rgba(224, 0, 255, 0.2)",
+                        color: isYogaMode ? "white" : "rgba(0, 0, 0, 0.4)",
+                        border: "1px solid rgba(0, 0, 0, 0.1)",
+                        padding: "0.8rem 1.8rem",
+                        fontSize: "0.85rem",
+                        fontWeight: "700",
+                        borderRadius: "100px",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        letterSpacing: isYogaMode ? "0.2em" : "0.15em",
+                        transition: "all 0.2s",
+                        flexShrink: 0
+                      }}
+                    >
+                      RECOVERY
+                    </button>
+                  </>
+                )}
+
                 {/* Area chips */}
                 {BODY_AREAS.map(area => {
                   const isSelected = selectedAreas.includes(area);
@@ -1288,16 +1339,16 @@ export default function Home() {
                         );
                       }}
                       style={{
-                        background: isSelected ? (selectionMode === 'manual' ? "rgba(0,0,0,0.3)" : "black") : (selectionMode === 'manual' ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)"),
-                        color: isSelected ? (selectionMode === 'manual' ? "black" : currentAccent) : (selectionMode === 'manual' ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)"),
-                        border: selectionMode === 'manual' ? (isSelected ? "1.5px solid black" : "1px solid rgba(0,0,0,0.15)") : "none",
+                        background: isSelected ? "black" : "rgba(0, 0, 0, 0.05)",
+                        color: isSelected ? "#daff00" : "rgba(0, 0, 0, 0.4)",
+                        border: "1px solid rgba(0, 0, 0, 0.1)",
                         padding: "0.8rem 1.8rem",
                         fontSize: "0.85rem",
                         fontWeight: "700",
                         borderRadius: "100px",
                         cursor: "pointer",
                         whiteSpace: "nowrap",
-                        letterSpacing: "0.1em",
+                        letterSpacing: isSelected ? "0.2em" : "0.15em",
                         transition: "all 0.2s",
                         flexShrink: 0
                       }}
@@ -1344,10 +1395,10 @@ export default function Home() {
                     <span style={{ fontSize: "0.8rem", background: "rgba(255,255,255,0.1)", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>BODYWEIGHT ONLY</span>
                   )}
                   {isSurfMode && (
-                    <span style={{ fontSize: "0.8rem", background: "#00E0FF", color: "black", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>SURF MODE</span>
+                    <span style={{ fontSize: "0.8rem", background: "#01ebff", color: "black", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.2em" }}>SURF MODE</span>
                   )}
                   {isYogaMode && (
-                    <span style={{ fontSize: "0.8rem", background: "#BD00FF", color: "white", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.05em" }}>RECOVERY MODE</span>
+                    <span style={{ fontSize: "0.8rem", background: "#e000ff", color: "white", padding: "0.4rem 1.2rem", borderRadius: "100px", fontWeight: "900", letterSpacing: "0.2em" }}>RECOVERY MODE</span>
                   )}
                   {selectedAreas.length === 0 ? (
                     (!isSurfMode && !isYogaMode) && (
@@ -3027,7 +3078,7 @@ export default function Home() {
                   width: "80px",
                   height: "80px",
                   borderRadius: "50%",
-                  background: isSurfMode ? "#00E0FF" : "rgba(255,255,255,0.05)",
+                  background: isSurfMode ? "#01ebff" : "rgba(255,255,255,0.05)",
                   border: "none",
                   color: isSurfMode ? "black" : "white",
                   display: "flex",
@@ -3035,7 +3086,7 @@ export default function Home() {
                   justifyContent: "center",
                   cursor: "pointer",
                   transition: "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                  boxShadow: isSurfMode ? "0 10px 30px rgba(0, 224, 255, 0.4)" : "none",
+                  boxShadow: isSurfMode ? "0 10px 30px rgba(1, 235, 255, 0.4)" : "none",
                   transform: isSurfMode ? "scale(1.05)" : "scale(1)"
                 }}
               >
@@ -3043,7 +3094,7 @@ export default function Home() {
                   <path d="M2 17c.6.5 1.2 1 2.5 1 2.7 0 4.5-2 4.5-2s1.8 2 4.5 2 4.5-2 4.5-2 1.8 2 4.5 2 1.9-.5 2.5-1M2 12c.6.5 1.2 1 2.5 1 2.7 0 4.5-2 4.5-2s1.8 2 4.5 2 4.5-2 4.5-2 1.8 2 4.5 2 1.9-.5 2.5-1M2 7c2.7 0 4.5 2 4.5 2s1.8-2 4.5-2 4.5 2 4.5 2 1.8-2 4.5-2 4.5 2 4.5 2" />
                 </svg>
               </button>
-              <span style={{ marginTop: "0.8rem", fontSize: "0.6rem", fontWeight: "900", color: isSurfMode ? "#00E0FF" : "white", letterSpacing: "0.2em", opacity: isSurfMode ? 1 : 0.4 }}>SURF</span>
+              <span style={{ marginTop: "0.8rem", fontSize: "0.6rem", fontWeight: "900", color: isSurfMode ? "#01ebff" : "white", letterSpacing: "0.2em", opacity: isSurfMode ? 1 : 0.4 }}>SURF</span>
             </div>
 
             {/* Yoga Mode */}
@@ -3057,7 +3108,7 @@ export default function Home() {
                   width: "80px",
                   height: "80px",
                   borderRadius: "50%",
-                  background: isYogaMode ? "#BD00FF" : "rgba(255,255,255,0.05)",
+                  background: isYogaMode ? "#e000ff" : "rgba(255,255,255,0.05)",
                   border: "none",
                   color: isYogaMode ? "white" : "white",
                   display: "flex",
@@ -3065,7 +3116,7 @@ export default function Home() {
                   justifyContent: "center",
                   cursor: "pointer",
                   transition: "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                  boxShadow: isYogaMode ? "0 10px 30px rgba(189, 0, 255, 0.4)" : "none",
+                  boxShadow: isYogaMode ? "0 10px 30px rgba(224, 0, 255, 0.4)" : "none",
                   transform: isYogaMode ? "scale(1.05)" : "scale(1)"
                 }}
               >
@@ -3073,7 +3124,7 @@ export default function Home() {
                   <path d="M12 10c0-4.418 3.582-8 8-8v8h-8zM12 10c0 4.418-3.582 8-8 8V10h8zM12 10c4.418 0 8 3.582 8 8h-8V10zM12 10c-4.418 0-8-3.582-8-8h8v10z" />
                 </svg>
               </button>
-              <span style={{ marginTop: "0.8rem", fontSize: "0.6rem", fontWeight: "900", color: isYogaMode ? "#BD00FF" : "white", letterSpacing: "0.2em", opacity: isYogaMode ? 1 : 0.4 }}>RECOVERY</span>
+              <span style={{ marginTop: "0.8rem", fontSize: "0.6rem", fontWeight: "900", color: isYogaMode ? "#e000ff" : "white", letterSpacing: "0.2em", opacity: isYogaMode ? 1 : 0.4 }}>RECOVERY</span>
             </div>
           </div>
 
