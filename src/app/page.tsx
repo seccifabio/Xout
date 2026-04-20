@@ -134,6 +134,7 @@ export default function Home() {
   }, [favorites]);
 
   const toggleFavorite = (name: string) => {
+    setIsRitualActive(false);
     setFavorites(prev => {
       const isFav = prev.includes(name);
       if (isFav) {
@@ -157,6 +158,7 @@ export default function Home() {
   };
 
   const moveExercise = (index: number, direction: 'up' | 'down') => {
+    setIsRitualActive(false);
     setSession(prev => {
       const next = [...prev];
       const target = direction === 'up' ? index - 1 : index + 1;
@@ -205,6 +207,7 @@ export default function Home() {
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
+  const [isRitualActive, setIsRitualActive] = useState(false);
 
   const [weights, setWeights] = useState<{ date: string, value: number }[]>([]);
   const [isWeightOpen, setIsWeightOpen] = useState(false);
@@ -245,7 +248,8 @@ export default function Home() {
   
   // AUTO-SYNC: Session Tray = Favorites + Manual Picks
   useEffect(() => {
-    if (selectionMode === 'manual' && isLoaded.current) {
+    // Skip sync if we just loaded a ritual or surprise to prevent it from being overwritten by favorites
+    if (selectionMode === 'manual' && isLoaded.current && !isRitualActive) {
       const favExs = favorites.map(name => {
         const ex = [...exercisesData.warmups, ...exercisesData.exercises, ...exercisesData.cooldowns].find(e => e.name === name);
         return ex ? { ...ex, duration: globalDuration } : null;
@@ -261,11 +265,12 @@ export default function Home() {
       
       setSession(combined.slice(0, maxExercises));
     }
-  }, [favorites, manualSession, selectionMode, globalDuration, maxExercises]);
+  }, [favorites, manualSession, selectionMode, globalDuration, maxExercises, isRitualActive]);
 
   const removeFromSession = (id: string) => {
     const ex = session.find(e => e.id === id);
     if (!ex) return;
+    setIsRitualActive(false);
     setManualSession(prev => prev.filter(m => m.id !== id && m.name !== ex.name));
     if (favorites.includes(ex.name)) {
       toggleFavorite(ex.name);
@@ -276,6 +281,7 @@ export default function Home() {
     // Check if it's already in manual picks
     const isAlreadyManual = manualSession.some(m => m.name === ex.name);
     
+    setIsRitualActive(false);
     if (isAlreadyManual) {
       // Toggle off manual pick
       setManualSession(prev => prev.filter(m => m.name !== ex.name));
@@ -287,6 +293,7 @@ export default function Home() {
   };
 
   const clearSession = () => {
+    setIsRitualActive(false);
     setManualSession([]);
     setSession([]);
   };
@@ -390,8 +397,9 @@ export default function Home() {
 
     const randomized = finalSession.sort(() => Math.random() - 0.5);
     setSession(randomized);
-    // Sync manual Picks state so un-hearting doesn't kill them immediately if we want
-    setManualSession(randomized.filter(ex => !favorites.includes(ex.name)));
+    // Preserve exactly what was randomized for first manual switch
+    setManualSession(randomized);
+    setIsRitualActive(true);
     isTrainingRef.current = false;
     setIsTraining(false);
     setIsPreparing(false);
@@ -448,6 +456,9 @@ export default function Home() {
     const replacement = filteredPool[Math.floor(Math.random() * filteredPool.length)];
     const newSession = [...session];
     newSession[index] = { ...replacement, duration: globalDuration };
+    
+    setIsRitualActive(false);
+    setManualSession(newSession.filter(ex => !favorites.includes(ex.name)));
     setSession(newSession);
   };
 
@@ -2662,9 +2673,9 @@ export default function Home() {
                       onClick={() => {
                         if (workout.duration) setSelectedTime(workout.duration);
                         setSelectionMode('manual');
-                        // Crucial: Set manual session to ONLY the non-favorites to avoid duplication in the auto-sync useEffect
-                        const loadedNonFavs = workout.exercises.filter((ex: any) => !favorites.includes(ex.name));
-                        setManualSession(loadedNonFavs);
+                        // Load the ritual exactly as saved, bypassing the auto-sync favorites injection
+                        setIsRitualActive(true);
+                        setManualSession(workout.exercises);
                         setSession(workout.exercises);
                         setIsLibraryOpen(false);
                         setIsOptionsOpen(false);
