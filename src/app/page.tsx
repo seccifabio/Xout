@@ -170,13 +170,40 @@ export default function Home() {
 
   const moveExercise = (index: number, direction: 'up' | 'down') => {
     setIsRitualActive(false);
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= session.length) return;
+
     setSession(prev => {
       const next = [...prev];
-      const target = direction === 'up' ? index - 1 : index + 1;
-      if (target < 0 || target >= next.length) return prev;
       [next[index], next[target]] = [next[target], next[index]];
       return next;
     });
+
+    // To persist reorder through the sync effect, we must update the source arrays
+    const item1 = session[index];
+    const item2 = session[target];
+    const isFav1 = favorites.includes(item1.name);
+    const isFav2 = favorites.includes(item2.name);
+
+    if (isFav1 && isFav2) {
+      setFavorites(prev => {
+        const next = [...prev];
+        const idx1 = next.indexOf(item1.name);
+        const idx2 = next.indexOf(item2.name);
+        if (idx1 !== -1 && idx2 !== -1) {
+          [next[idx1], next[idx2]] = [next[idx2], next[idx1]];
+        }
+        return next;
+      });
+    } else {
+      // Update manualSession order or mixed order for the next sync
+      setManualSession(prev => {
+        // Construct the expected manual order from the intended session state
+        const nextSession = [...session];
+        [nextSession[index], nextSession[target]] = [nextSession[target], nextSession[index]];
+        return nextSession.filter(ex => !favorites.includes(ex.name));
+      });
+    }
   };
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -287,26 +314,40 @@ export default function Home() {
 
   const [trainingSession, setTrainingSession] = useState<Exercise[]>([]);
   
-  // AUTO-SYNC: Session Tray = Favorites + Manual Picks
+  // AUTO-SYNC: Session Tray = Favorites + Manual Picks (Order Preserving)
   useEffect(() => {
-    // Skip sync if we just loaded a ritual or surprise to prevent it from being overwritten by favorites
     if (selectionMode === 'manual' && isLoaded.current && !isRitualActive) {
-      // If we are here, we definitely want to sync favorites to manual session
       const currentFavNames = (favorites || []).slice(0, 10);
       const favExs = currentFavNames.map(name => {
         const ex = [...exercisesData.warmups, ...exercisesData.exercises, ...exercisesData.cooldowns].find(e => e.name === name);
         return ex ? { ...ex, duration: globalDuration } : null;
       }).filter(Boolean) as Exercise[];
 
-      // Combine: Favs take priority, followed by manual picks that aren't already favs
-      const combined = [...favExs];
+      // All items that should be in the tray
+      const goals = [...favExs];
       manualSession.forEach(m => {
-        if (!combined.some(c => c.name === m.name)) {
-          combined.push(m);
+        if (!goals.some(c => c.name === m.name)) {
+          goals.push(m);
         }
       });
       
-      const limited = combined.slice(0, maxExercises);
+      const goalNames = goals.map(g => g.name);
+      
+      // We want to keep existing session order, but add/remove to match goals
+      let nextSession = [...session];
+      
+      // 1. Remove items that are no longer favorites OR manual picks
+      nextSession = nextSession.filter(s => goalNames.includes(s.name));
+      
+      // 2. Add missing items (append to end)
+      goals.forEach(g => {
+        if (!nextSession.some(s => s.name === g.name)) {
+          nextSession.push(g);
+        }
+      });
+      
+      const limited = nextSession.slice(0, maxExercises);
+      
       if (JSON.stringify(limited.map(e => e.name)) !== JSON.stringify(session.map(e => e.name))) {
         setSession(limited);
       }
