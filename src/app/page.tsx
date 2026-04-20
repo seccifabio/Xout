@@ -67,7 +67,7 @@ export default function Home() {
       next[idx] = { ...next[idx], name: newName };
       localStorage.setItem('xout_saved_workouts', JSON.stringify(next));
       setSavedRituals(next);
-      triggerToast("Ritual Renamed");
+      triggerToast("Workout Renamed");
     }
   };
 
@@ -2264,7 +2264,7 @@ export default function Home() {
                 letterSpacing: "0.2em",
                 opacity: 0.8
               }}>
-                RITUAL ARCHIVED ✓
+                WORKOUT ARCHIVED ✓
               </div>
             ) : (
               <button 
@@ -2283,7 +2283,7 @@ export default function Home() {
                   transition: "all 0.2s"
                 }}
               >
-                SAVE WORKOUT RITUAL
+                SAVE WORKOUT
               </button>
             )}
           </div>
