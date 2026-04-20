@@ -1805,23 +1805,21 @@ export default function Home() {
           overflow: "hidden",
           position: "relative"
         }}>
-          {/* Round Progress Ritual */}
-          {!isPreparing && (
+          {/* Round Progress Ritual - Persistent across movement and recovery */}
+          <div style={{ 
+            position: "absolute", 
+            top: 0, left: 0, right: 0, 
+            height: "4px", 
+            background: "rgba(255,255,255,0.1)",
+            zIndex: 100 
+          }}>
             <div style={{ 
-              position: "absolute", 
-              top: 0, left: 0, right: 0, 
-              height: "4px", 
-              background: "rgba(255,255,255,0.1)",
-              zIndex: 100 
-            }}>
-              <div style={{ 
-                height: "100%", 
-                background: "var(--accent)", 
-                width: `${((currentIndex % (session.length || 1)) + 1) / (session.length || 1) * 100}%`,
-                transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
-              }} />
-            </div>
-          )}
+              height: "100%", 
+              background: "var(--accent)", 
+              width: `${((currentIndex % (session.length || 1)) + 1) / (session.length || 1) * 100}%`,
+              transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
+            }} />
+          </div>
           <div style={{ 
             textAlign: "center", 
             flex: 1, 
