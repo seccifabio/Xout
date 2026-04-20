@@ -2840,24 +2840,6 @@ export default function Home() {
           </div>
         </div>
 
-        <footer style={{ padding: "0 1.5rem 4rem" }}>
-          <button 
-            onClick={() => setIsAreaModalOpen(false)}
-            className="button button-shiny"
-            style={{ 
-              width: "100%", 
-              height: "70px", 
-              borderRadius: "999px", 
-              fontWeight: "900", 
-              letterSpacing: "0.2em",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-          >
-            CONFIRM SELECTION
-          </button>
-        </footer>
       </div>
     </>
   );
