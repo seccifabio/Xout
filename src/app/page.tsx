@@ -1597,7 +1597,7 @@ export default function Home() {
                     padding: "0.2rem 0.5rem", 
                     background: selectionMode === 'manual' ? "black" : "rgba(255,255,255,0.1)", 
                     color: selectionMode === 'manual' ? "var(--accent)" : "white",
-                    fontSize: "0.6rem",
+                    fontSize: "0.75rem",
                     fontWeight: "900",
                     borderRadius: "4px",
                     textTransform: "uppercase"
@@ -2703,7 +2703,7 @@ export default function Home() {
                       alignItems: "center"
                     }}>
                       <div>
-                        <span style={{ fontSize: "0.6rem", fontWeight: "900", color: "var(--accent)", opacity: 0.6 }}>{ex.id.startsWith('w') ? 'WARMUP' : ex.id.startsWith('c') ? 'COOLDOWN' : (ex as any).bodyArea || 'EXERCISE'}</span>
+                        <span style={{ fontSize: "0.75rem", fontWeight: "900", color: "var(--accent)", opacity: 0.6 }}>{ex.id.startsWith('w') ? 'WARMUP' : ex.id.startsWith('c') ? 'COOLDOWN' : (ex as any).bodyArea || 'EXERCISE'}</span>
                         <h3 style={{ fontSize: "1.2rem", fontWeight: "900" }}>{ex.name}</h3>
                       </div>
                       <button 
@@ -2964,7 +2964,7 @@ export default function Home() {
                   }}
                 >
                   <div style={{ flex: 1, cursor: "pointer" }} onClick={() => renameRitual(idx)}>
-                    <div style={{ fontSize: "0.6rem", fontWeight: "900", color: "var(--accent)", opacity: 0.6, letterSpacing: "0.2em", marginBottom: "0.5rem" }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: "900", color: "var(--accent)", opacity: 0.6, letterSpacing: "0.2em", marginBottom: "0.5rem" }}>
                       {workout.name ? workout.date?.toUpperCase() : 'HISTORICAL RITUAL'}
                     </div>
                     <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "white", marginBottom: "0.4rem", letterSpacing: "-0.04em", lineHeight: 1 }}>
