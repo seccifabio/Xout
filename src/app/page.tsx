@@ -1744,9 +1744,9 @@ export default function Home() {
               <button 
                 onClick={saveWorkout}
                 style={{ 
-                  flex: "0 0 60px", 
-                  width: "60px",
-                  height: "60px", 
+                  flex: "0 0 64px", 
+                  width: "64px",
+                  height: "64px", 
                   borderRadius: "999px", 
                   background: (isSaved || isCurrentSessionSaved) ? (selectionMode === 'manual' ? "rgba(0,0,0,0.1)" : "rgba(217,255,0,0.1)") : (selectionMode === 'manual' ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)"),
                   color: (isSaved || isCurrentSessionSaved) ? (selectionMode === 'manual' ? "black" : "#d9ff00") : (selectionMode === 'manual' ? "rgba(0,0,0,0.4)" : "white"),
@@ -2170,8 +2170,8 @@ export default function Home() {
             <button 
               onClick={startCooldown}
               style={{
-                width: "110px",
-                height: "110px",
+                width: "84px",
+                height: "84px",
                 borderRadius: "50%",
                 background: "var(--accent)",
                 color: "black",
