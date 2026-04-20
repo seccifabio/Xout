@@ -2253,9 +2253,8 @@ export default function Home() {
             onClick={() => setIsTimeSheetOpen(false)}
             style={{
               position: "absolute",
-              top: "50%",
-              right: "1.2rem",
-              transform: "translateY(-50%)",
+              top: "1.5rem",
+              right: "1.5rem",
               width: "56px",
               height: "56px",
               borderRadius: "50%",
@@ -2431,9 +2430,8 @@ export default function Home() {
               onClick={() => setIsFavoritesOpen(false)}
               style={{
                 position: "absolute",
-                top: "50%",
-                right: "1.2rem",
-                transform: "translateY(-50%)",
+                top: "1.5rem",
+                right: "1.5rem",
                 width: "56px",
                 height: "56px",
                 borderRadius: "50%",
@@ -2543,9 +2541,8 @@ export default function Home() {
             onClick={() => setIsWeightOpen(false)}
             style={{
               position: "absolute",
-              top: "50%",
-              right: "1.2rem",
-              transform: "translateY(-50%)",
+              top: "1.5rem",
+              right: "1.5rem",
               width: "56px",
               height: "56px",
               borderRadius: "50%",
@@ -2839,9 +2836,8 @@ export default function Home() {
             onClick={() => setIsAreaModalOpen(false)}
             style={{
               position: "absolute",
-              top: "50%",
-              right: "1.2rem",
-              transform: "translateY(-50%)",
+              top: "1.5rem",
+              right: "1.5rem",
               width: "56px",
               height: "56px",
               borderRadius: "50%",
