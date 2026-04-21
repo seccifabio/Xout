@@ -269,6 +269,7 @@ export default function Home() {
   const [totalRounds, setTotalRounds] = useState(1);
   const [isFinished, setIsFinished] = useState(false);
   const [isCooldown, setIsCooldown] = useState(false);
+  const [hasCompletedCooldown, setHasCompletedCooldown] = useState(false);
   const [isWarmup, setIsWarmup] = useState(false);
   const [isVoiceMuted, setIsVoiceMuted] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
@@ -570,8 +571,8 @@ export default function Home() {
   }, [session, weights, hasHydrated, totalRounds]);
 
   const totalSessionDuration = useMemo(() => {
-    return session.reduce((acc, ex) => acc + (ex.duration || 60), 0);
-  }, [session]);
+    return session.reduce((acc, ex) => acc + (ex.duration || globalDuration) + breakTime, 0);
+  }, [session, globalDuration, breakTime]);
 
   const swapExercise = (index: number) => {
     const filterFunc = (e: any) => {
@@ -602,6 +603,7 @@ export default function Home() {
     setIsTraining(false);
     setIsWarmup(true);
     setIsCooldown(false);
+    setHasCompletedCooldown(false);
     isTrainingRef.current = true;
     
     // Select 3 random warmups
@@ -805,6 +807,7 @@ export default function Home() {
             startMainWorkout();
           } else if (isCooldown) {
             setIsCooldown(false);
+            setHasCompletedCooldown(true);
             setIsFinished(true);
             playSuccessSound();
             speak("Cooldown complete. You are ready to go.");
@@ -2090,7 +2093,7 @@ export default function Home() {
             zIndex: 10
           }}>
             {/* Total time label */}
-            <div style={{ textAlign: "center", opacity: 0.45, letterSpacing: "0.2em", fontSize: "0.7rem", marginBottom: "1rem", fontWeight: "900", color: (isPreparing && prepareTime <= 3) ? "black" : "white" }}>
+            <div style={{ textAlign: "center", opacity: 0.6, letterSpacing: "0.2em", fontSize: "1.4rem", marginBottom: "1rem", fontWeight: "900", color: (isPreparing && prepareTime <= 3) ? "black" : "white" }}>
               REMAINING: {formatTime(Math.max(0, totalTrainingTime - elapsedTime))}
             </div>
             {/* Controls row — centered */}
@@ -2373,27 +2376,29 @@ export default function Home() {
             marginTop: "3rem"
           }}>
             <div style={{ display: "flex", gap: "1rem" }}>
-              <button 
-                onClick={startCooldown}
-                style={{
-                  flex: 1,
-                  height: "88px",
-                  borderRadius: "100px",
-                  background: "var(--accent)",
-                  color: "black",
-                  border: "none",
-                  fontWeight: "900",
-                  fontSize: "1rem",
-                  letterSpacing: "0.15em",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 10px 40px rgba(218, 255, 0, 0.2)"
-                }}
-              >
-                COOL DOWN
-              </button>
+              {!hasCompletedCooldown && (
+                <button 
+                  onClick={startCooldown}
+                  style={{
+                    flex: 1,
+                    height: "88px",
+                    borderRadius: "100px",
+                    background: "var(--accent)",
+                    color: "black",
+                    border: "none",
+                    fontWeight: "900",
+                    fontSize: "1rem",
+                    letterSpacing: "0.15em",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 10px 40px rgba(218, 255, 0, 0.2)"
+                  }}
+                >
+                  COOL DOWN
+                </button>
+              )}
             </div>
 
             {/* SAVE WORKOUT BUTTON AS TILE ACTION */}
@@ -2507,7 +2512,7 @@ export default function Home() {
 
         <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem" }} className="no-scrollbar">
           <section>
-              <h4 style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "white", opacity: 0.8, letterSpacing: "0.2em", marginBottom: "1rem" }}>Session Duration (MIN)</h4>
+              <h4 style={{ fontSize: "1rem", textTransform: "uppercase", color: "white", opacity: 0.8, letterSpacing: "0.2em", marginBottom: "1rem" }}>Session Duration (MIN)</h4>
               <div 
                 style={{ 
                   display: "flex", 
@@ -2558,7 +2563,7 @@ export default function Home() {
             </section>
 
             <section>
-              <h4 style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "white", opacity: 0.8, letterSpacing: "0.2em", marginBottom: "1rem" }}>Work Intensity (SEC)</h4>
+              <h4 style={{ fontSize: "1rem", textTransform: "uppercase", color: "white", opacity: 0.8, letterSpacing: "0.2em", marginBottom: "1rem" }}>Work Intensity (SEC)</h4>
               <div style={{ 
                 display: "flex", 
                 alignItems: "center", 
@@ -2586,7 +2591,7 @@ export default function Home() {
             </section>
 
             <section>
-              <h4 style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "white", opacity: 0.8, letterSpacing: "0.2em", marginBottom: "1rem" }}>Recovery Window (SEC)</h4>
+              <h4 style={{ fontSize: "1rem", textTransform: "uppercase", color: "white", opacity: 0.8, letterSpacing: "0.2em", marginBottom: "1rem" }}>Recovery Window (SEC)</h4>
               <div style={{ 
                 display: "flex", 
                 alignItems: "center", 
