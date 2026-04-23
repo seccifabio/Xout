@@ -2595,6 +2595,7 @@ export default function Home() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px", zIndex: 100 }}>
             <h1 
               className="title"
+              onClick={() => { setIsTimerModalOpen(false); setIsTimerRunning(false); setIsTimerPreparing(false); }}
               style={{ 
                 margin: 0, 
                 display: "flex",
