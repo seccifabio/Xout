@@ -2650,7 +2650,7 @@ export default function Home() {
 
           {/* 4. ACTIVE STATUS BAR (ONLY WHEN RUNNING/PREPPING) */}
           {(isTimerRunning || isTimerPreparing) && (
-            <div style={{ textAlign: "center", marginBottom: "30px" }}>
+            <div style={{ textAlign: "center", marginBottom: "30px", marginTop: "60px" }}>
               <div style={{ 
                 fontSize: "1.8rem", 
                 fontWeight: "900", 
