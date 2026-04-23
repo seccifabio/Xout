@@ -44,6 +44,14 @@ export default function Home() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSplashActive, setIsSplashActive] = useState(true);
   const [isSplashExiting, setIsSplashExiting] = useState(false);
+  const [isTimerModalOpen, setIsTimerModalOpen] = useState(false);
+  const [timerMode, setTimerMode] = useState<'countdown' | 'stopwatch' | 'tabata'>('stopwatch');
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [timerPresets, setTimerPresets] = useState([30, 60, 120, 180, 300]);
+  const [isTimerPreparing, setIsTimerPreparing] = useState(false);
+  const [timerPrepareTime, setTimerPrepareTime] = useState(10);
+  const [initialTimerSeconds, setInitialTimerSeconds] = useState(60);
 
   useEffect(() => {
     // Start exit after reveal + shine sequence (~2.5s)
@@ -78,7 +86,14 @@ export default function Home() {
   useEffect(() => {
     setHasHydrated(true);
     const storedRituals = localStorage.getItem('xout_saved_workouts');
-    if (storedRituals) setSavedRituals(JSON.parse(storedRituals));
+    if (storedRituals) {
+      try {
+        setSavedRituals(JSON.parse(storedRituals));
+      } catch (e) {
+        console.error("Error parsing saved rituals:", e);
+        setSavedRituals([]);
+      }
+    }
 
     // PREVIEW RITUAL: Jump straight to post-workout states
     const params = new URLSearchParams(window.location.search);
@@ -267,6 +282,9 @@ export default function Home() {
   const [prepareTime, setPrepareTime] = useState(10);
   const [isPaused, setIsPaused] = useState(false);
   const [totalRounds, setTotalRounds] = useState(1);
+  const [tabataRounds, setTabataRounds] = useState(8);
+  const [currentTabataRound, setCurrentTabataRound] = useState(1);
+  const [tabataPhase, setTabataPhase] = useState<'work' | 'rest'>('work');
   const [isFinished, setIsFinished] = useState(false);
   const [isCooldown, setIsCooldown] = useState(false);
   const [hasCompletedCooldown, setHasCompletedCooldown] = useState(false);
@@ -283,23 +301,105 @@ export default function Home() {
 
   const wakeLockRef = useRef<any>(null);
   
+
   const beepAudioRef = useRef<any>(null);
+  const bellAudioRef = useRef<any>(null);
   const ignitionAudioRef = useRef<any>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       beepAudioRef.current = new window.Audio("/beep.wav");
+      bellAudioRef.current = new window.Audio("/ignition.wav"); // Fallback as bell.wav is missing
       ignitionAudioRef.current = new window.Audio("/ignition.wav");
     }
-  }, []);
+  }, []);  useEffect(() => {
+    let interval: any;
+    // TIMER / STOPWATCH / TABATA MAIN LOOP
+    if (isTimerRunning && !isPaused) {
+      interval = setInterval(() => {
+        setTimerSeconds(prev => {
+          if (timerMode === 'stopwatch') {
+            return prev + 1;
+          } else {
+            // Countdown / Tabata Logic
+            if (prev <= 1) {
+              if (timerMode === 'tabata') {
+                // Tabata Phase Transition Ritual
+                if (tabataPhase === 'work') {
+                  if (currentTabataRound < tabataRounds) {
+                    setTabataPhase('rest');
+                    setInitialTimerSeconds(10);
+                    if (bellAudioRef.current) { bellAudioRef.current.currentTime = 0; bellAudioRef.current.play(); }
+                    return 10; // Rest period
+                  } else {
+                    // Final Work period finished -> Success Ritual
+                    setIsTimerRunning(false);
+                    const successAudio = new Audio('/freesound_community-yeah-96783.mp3');
+                    successAudio.play().catch(e => console.log("Success audio blocked", e));
+                    return 0;
+                  }
+                } else {
+                  // Rest period finished -> Increment round and start Work
+                  setTabataPhase('work');
+                  setInitialTimerSeconds(20);
+                  setCurrentTabataRound(r => r + 1);
+                  if (bellAudioRef.current) { bellAudioRef.current.currentTime = 0; bellAudioRef.current.play(); }
+                  return 20; // Work period
+                }
+              } else {
+                setIsTimerRunning(false);
+                if (ignitionAudioRef.current) { ignitionAudioRef.current.currentTime = 0; ignitionAudioRef.current.play(); }
+                return 0;
+              }
+            }
+            // Warning Beeps (Last 4s)
+            if (prev <= 4) {
+              if (beepAudioRef.current) { beepAudioRef.current.currentTime = 0; beepAudioRef.current.play(); }
+            }
+            return prev - 1;
+          }
+        });
+      }, 1000);
+    } else if (isTimerPreparing && !isPaused) {
+      // THE "GET READY" RITUAL LOOP
+      interval = setInterval(() => {
+        setTimerPrepareTime(prev => {
+          if (prev <= 1) {
+            setIsTimerPreparing(false);
+            setIsTimerRunning(true);
+            if (ignitionAudioRef.current) {
+              ignitionAudioRef.current.currentTime = 0;
+              ignitionAudioRef.current.play().catch((e: any) => console.log("Ignition blocked", e));
+            }
+            return 0;
+          }
+          if (prev <= 4) {
+            if (beepAudioRef.current) {
+              beepAudioRef.current.currentTime = 0;
+              beepAudioRef.current.play().catch((e: any) => console.log("Beep blocked", e));
+            }
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => { if (interval) clearInterval(interval); };
+  }, [isTimerRunning, isTimerPreparing, isPaused, timerMode, tabataPhase, currentTabataRound, tabataRounds]);
+;
 
   // Sync weights with localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('xout_weights');
     if (saved) {
       try {
-        setWeights(JSON.parse(saved));
-      } catch (e) {}
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setWeights(parsed);
+        }
+      } catch (e) {
+        console.error("Error parsing weights:", e);
+        setWeights([]);
+      }
     }
   }, []);
 
@@ -521,7 +621,14 @@ export default function Home() {
     };
     
     // Persist to Storage first
-    const existing = JSON.parse(localStorage.getItem('xout_saved_workouts') || '[]');
+    let existing = [];
+    try {
+      const stored = localStorage.getItem('xout_saved_workouts');
+      existing = JSON.parse(stored || '[]');
+    } catch (e) {
+      console.error("Error parsing saved workouts for archive:", e);
+      existing = [];
+    }
     const newArchived = [workoutToSave, ...existing];
     localStorage.setItem('xout_saved_workouts', JSON.stringify(newArchived));
     
@@ -681,6 +788,26 @@ export default function Home() {
     speak(`Warm up complete. First exercise: ${expandedSession[0].name}. ${expandedSession[0].desc}`);
   };
 
+  const skipToNext = () => {
+    if (!isTraining) return;
+    if (isWarmup) {
+      startMainWorkout();
+      return;
+    }
+    
+    const nextIdx = currentIndex + 1;
+    if (nextIdx < trainingSession.length) {
+      setCurrentIndex(nextIdx);
+      setIsPreparing(true);
+      setPrepareTime(breakTime > 0 ? breakTime : 1);
+      setTimeLeft(trainingSession[nextIdx].duration || globalDuration);
+    } else {
+      setIsFinished(true);
+      playSuccessSound();
+      speak("Session complete.");
+    }
+  };
+
   const startCooldown = () => {
     setIsFinished(false);
     setIsCooldown(true);
@@ -764,6 +891,21 @@ export default function Home() {
     if (ignitionAudioRef.current) {
       ignitionAudioRef.current.currentTime = 0;
       ignitionAudioRef.current.play().catch(() => {});
+    }
+  };
+
+  const primeAudio = () => {
+    if (beepAudioRef.current) {
+      beepAudioRef.current.play().then(() => {
+        beepAudioRef.current.pause();
+        beepAudioRef.current.currentTime = 0;
+      }).catch((e: any) => console.log("Audio priming blocked", e));
+    }
+    if (ignitionAudioRef.current) {
+      ignitionAudioRef.current.play().then(() => {
+        ignitionAudioRef.current.pause();
+        ignitionAudioRef.current.currentTime = 0;
+      }).catch((e: any) => console.log("Audio priming blocked", e));
     }
   };
 
@@ -883,8 +1025,9 @@ export default function Home() {
   };
 
   const formatTime = (seconds: number) => {
-    const min = Math.floor(seconds / 60);
-    const sec = seconds % 60;
+    const s = Math.max(0, seconds);
+    const min = Math.floor(s / 60);
+    const sec = s % 60;
     return `${min}:${sec.toString().padStart(2, '0')}`;
   };
 
@@ -946,7 +1089,8 @@ export default function Home() {
             <span style={{ 
               color: selectionMode === 'manual' ? "rgba(0,0,0,0.12)" : "white", 
               position: "relative", 
-              zIndex: 10 
+              zIndex: 10,
+              fontStyle: "italic"
             }}>X</span>
             <span style={{ overflow: "visible", display: "inline-flex" }}>
               <span 
@@ -1052,13 +1196,13 @@ export default function Home() {
         bottom: 0, 
         left: 0, 
         right: 0, 
-        height: "70vh", 
+        height: "100vh", 
         background: "#111", 
         borderTop: "1px solid rgba(255,255,255,0.1)", 
-        borderTopLeftRadius: "3rem", 
-        borderTopRightRadius: "3rem", 
+        borderTopLeftRadius: "0", 
+        borderTopRightRadius: "0", 
         zIndex: 1000, 
-        padding: "1.2rem 2rem",
+        padding: "calc(2.5rem + 40px) 2rem 1.2rem",
         display: "flex",
         flexDirection: "column",
         gap: "2.5rem",
@@ -1070,26 +1214,22 @@ export default function Home() {
           onClick={() => setIsOptionsOpen(false)} 
           style={{ 
             position: "absolute",
-            top: "1.2rem",
-            right: "1.2rem",
-            background: "rgba(255,255,255,0.08)", 
+            top: "calc(2.5rem + 20px)",
+            right: "2rem",
+            background: "none", 
             border: "none", 
             color: "white", 
-            width: "56px", 
-            height: "56px", 
-            borderRadius: "50%", 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "center", 
             cursor: "pointer",
-            fontSize: "1.2rem",
-            fontWeight: "300",
+            opacity: 0.5,
+            transition: "opacity 0.2s",
             zIndex: 10
           }}
         >
-          ✕
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
-        <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "2px", margin: "0 auto", marginBottom: "0.2rem" }} />
         
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ fontSize: "0.8rem", fontWeight: "900", letterSpacing: "0.2em", color: "var(--accent)", textTransform: "uppercase" }}>SETTINGS</h2>
@@ -1212,6 +1352,33 @@ export default function Home() {
             </button>
             <span style={{ fontSize: "0.6rem", fontWeight: "900", letterSpacing: "0.1em", opacity: 0.4, color: "white" }}>WEIGHT</span>
           </div>
+
+          {/* Timer Tool */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.2rem", background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "2rem" }}>
+            <button 
+              onClick={() => { setIsOptionsOpen(false); setIsTimerModalOpen(true); }}
+              style={{
+                width: "64px",
+                height: "64px",
+                background: "rgba(255,255,255,0.05)",
+                color: "white",
+                border: "none",
+                borderRadius: "50%",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.2s"
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 22C16.4183 22 20 18.4183 20 14C20 9.58172 16.4183 6 12 6C7.58172 6 4 9.58172 4 14C4 18.4183 7.58172 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path> 
+                <path d="M9 2H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path> 
+                <path d="M15.24 10.76L12 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path> 
+              </svg>
+            </button>
+            <span style={{ fontSize: "0.6rem", fontWeight: "900", letterSpacing: "0.1em", opacity: 0.4, color: "white" }}>TIMER</span>
+          </div>
         </div>
       </div>
 
@@ -1264,10 +1431,10 @@ export default function Home() {
                     minWidth: 0
                   }}
                 />
-                <button
+                <button 
                   onClick={() => { setIsSearching(false); setSearchQuery(''); }}
                   style={{
-                    background: selectionMode === 'manual' ? "white" : "rgba(255,255,255,0.2)",
+                    background: selectionMode === 'manual' ? "black" : "rgba(255,255,255,0.15)",
                     border: "none",
                     width: "30px",
                     height: "30px",
@@ -1276,16 +1443,17 @@ export default function Home() {
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    color: selectionMode === 'manual' ? "black" : "white",
-                    fontSize: "1.1rem",
-                    fontWeight: "600",
+                    color: selectionMode === 'manual' ? "var(--accent)" : "white",
                     flexShrink: 0,
                     marginRight: "0.5rem",
                     marginLeft: "0.5rem",
                     transition: "all 0.2s"
                   }}
                 >
-                  ✕
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
                 </button>
               </div>
             ) : (
@@ -1458,7 +1626,7 @@ export default function Home() {
 
               <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "1.2rem", marginTop: "2.5rem" }}>
                 <button 
-                  onClick={() => generateSession()}
+                  onClick={() => { primeAudio(); generateSession(); }}
                   className="button button-shiny"
                   style={{
                     background: "var(--accent)",
@@ -1517,30 +1685,7 @@ export default function Home() {
                   </svg>
                 </button>
               </div>
-              
-              <button 
-                onClick={() => setIsTimeSheetOpen(true)}
-                style={{ 
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  color: "white", 
-                  fontSize: "0.8rem", 
-                  fontWeight: "900", 
-                  cursor: "pointer",
-                  padding: "0.8rem 1.5rem",
-                  borderRadius: "999px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.6rem",
-                  transition: "all 0.2s"
-                }}
-              >
-                <svg style={{ width: "16px", height: "16px" }} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M15.24 2H8.76004C5.00004 2 4.71004 5.38 6.74004 7.22L17.26 16.78C19.29 18.62 19 22 15.24 22H8.76004C5.00004 22 4.71004 18.62 6.74004 16.78L17.26 7.22C19.29 5.38 19 2 15.24 2Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"></path>
-                </svg>
-                <span>{selectedTime} MINUTE SESSION</span>
-              </button>
-            </div>
+              </div>
         )}
 
           {(searchQuery.trim() ? availableExercises : (selectionMode === 'surprise' ? session : availableExercises)).map((ex, i) => {
@@ -1798,11 +1943,13 @@ export default function Home() {
                     alignItems: "center", 
                     justifyContent: "center", 
                     cursor: "pointer",
-                    fontSize: "1.2rem",
-                    fontWeight: "900"
+                    transition: "transform 0.2s"
                   }}
                 >
-                  ✕
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
                 </button>
               </div>
 
@@ -1998,25 +2145,25 @@ export default function Home() {
           overflow: "hidden",
           position: "relative"
         }}>
-          {/* Round Progress Ritual - Persistent across movement and recovery */}
-          {!(currentIndex === 0 && isPreparing) && (
+          {/* TOP PROGRESS RITUAL - 1PX ACCENT LINE */}
+          <div style={{ 
+            position: "absolute", 
+            top: 0, 
+            left: 0, 
+            width: "100%", 
+            height: "2px", 
+            background: "rgba(255,255,255,0.05)", 
+            zIndex: 1000 
+          }}>
             <div style={{ 
-              position: "absolute", 
-              top: 0, left: 0, right: 0, 
-              height: "4px", 
-              background: "rgba(255,255,255,0.1)",
-              zIndex: 100 
-            }}>
-              <div style={{ 
-                height: "100%", 
-                background: (isPreparing && prepareTime <= 3)
-                  ? (isWarmup ? "white" : "black") 
-                  : (isWarmup ? "white" : "var(--accent)"), 
-                width: `${((currentIndex % (session.length || 1)) + 1) / (session.length || 1) * 100}%`,
-                transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
-              }} />
-            </div>
-          )}
+              width: `${(elapsedTime / (totalTrainingTime || 1)) * 100}%`, 
+              height: "100%", 
+              background: "var(--accent)", 
+              transition: "width 1s linear" 
+            }} />
+          </div>
+
+          {/* Round Progress Ritual - Persistent across movement and recovery */}
           <div style={{ 
             textAlign: "center", 
             flex: 1, 
@@ -2097,7 +2244,30 @@ export default function Home() {
               REMAINING: {formatTime(Math.max(0, totalTrainingTime - elapsedTime))}
             </div>
             {/* Controls row — centered */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "2rem", marginBottom: "2rem" }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1.5rem", marginBottom: "2rem" }}>
+              {/* MUTE TOGGLE RITUAL */}
+              <button 
+                onClick={() => setIsVoiceMuted(!isVoiceMuted)}
+                style={{
+                  width: "56px", 
+                  height: "56px", 
+                  borderRadius: "50%", 
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: isVoiceMuted ? "rgba(255,255,255,0.05)" : "black",
+                  color: isVoiceMuted ? "rgba(255,255,255,0.3)" : "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease"
+                }}
+              >
+                {isVoiceMuted ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9l-5 5H2v-4h2l5 5zM11 5L6 10M11 19l-5-5"></path></svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                )}
+              </button>
 
               <button 
                 onClick={() => {
@@ -2107,16 +2277,17 @@ export default function Home() {
                   setIsPaused(!isPaused);
                 }}
                 style={{
-                  width: "56px", 
-                  height: "56px", 
+                  width: "64px", 
+                  height: "64px", 
                   borderRadius: "50%", 
-                  border: (isPreparing && prepareTime <= 3) ? "1px solid rgba(0,0,0,0.15)" : "1px solid rgba(255,255,255,0.2)",
-                  background: "none",
-                  color: (isPreparing && prepareTime <= 3) ? "black" : "white",
+                  border: (isPreparing && prepareTime <= 3) ? "none" : "1px solid rgba(255,255,255,0.2)",
+                  background: "black",
+                  color: (isPreparing && prepareTime <= 3) ? "var(--accent)" : "white",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  transition: "all 0.3s ease"
                 }}
               >
                 {isPaused ? (
@@ -2129,80 +2300,44 @@ export default function Home() {
               <button 
                 onClick={stopSession}
                 style={{
-                  width: "80px", 
-                  height: "80px", 
+                  width: "90px", 
+                  height: "90px", 
                   borderRadius: "50%", 
-                  background: (isPreparing && prepareTime <= 3) ? "black" : "#daff00",
+                  background: (isPreparing && prepareTime <= 3) ? "black" : "var(--accent)",
                   border: "none",
-                  color: (isPreparing && prepareTime <= 3) ? (isWarmup ? "#ff6b00" : "var(--accent)") : "black",
+                  color: (isPreparing && prepareTime <= 3) ? "var(--accent)" : "black",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
-                  boxShadow: "0 10px 30px rgba(0,0,0,0.15)"
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease"
                 }}
               >
                 <div style={{ width: "24px", height: "24px", background: "currentColor", borderRadius: "2px" }} />
               </button>
 
-              {isWarmup ? (
-                <button 
-                  onClick={startMainWorkout}
-                  style={{
-                    width: "56px", 
-                    height: "56px", 
-                    borderRadius: "50%", 
-                    background: "white",
-                    border: "none",
-                    color: "black",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
-                  }}
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
-                </button>
-              ) : (
-                <button 
-                  onClick={() => {
-                    const nextMute = !isVoiceMuted;
-                    setIsVoiceMuted(nextMute);
-                    triggerToast(nextMute ? "VOICE: SILENCED" : "VOICE: ACTIVATED");
-                  }}
-                  style={{
-                    width: "56px", 
-                    height: "56px", 
-                    borderRadius: "50%", 
-                    background: (isPreparing && prepareTime <= 3) 
-                      ? (isVoiceMuted ? "none" : "black") 
-                      : (isVoiceMuted ? "rgba(255,255,255,0.1)" : "white"),
-                    border: (isPreparing && prepareTime <= 3)
-                      ? (isVoiceMuted ? "1px solid rgba(0,0,0,0.15)" : "none")
-                      : (isVoiceMuted ? "1px solid rgba(255,255,255,0.2)" : "none"),
-                    color: (isPreparing && prepareTime <= 3) 
-                      ? (isVoiceMuted ? "black" : (isWarmup ? "#ff6b00" : "var(--accent)")) 
-                      : (isVoiceMuted ? "white" : "black"),
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    boxShadow: (isPreparing && prepareTime <= 3) 
-                      ? "none" 
-                      : (isVoiceMuted ? "none" : "0 10px 30px rgba(0,0,0,0.2)"),
-                    opacity: 1,
-                    transition: "all 0.2s"
-                  }}
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12.5934901,23.257841 L12.5819402,23.2595131 L12.5108777,23.2950439 L12.4918791,23.2987469 L12.4918791,23.2987469 L12.4767152,23.2950439 L12.4056548,23.2595131 C12.3958229,23.2563662 12.3870493,23.2590235 12.3821421,23.2649074 L12.3780323,23.275831 L12.360941,23.7031097 L12.3658947,23.7234994 L12.3769048,23.7357139 L12.4804777,23.8096931 L12.4953491,23.8136134 L12.4953491,23.8136134 L12.5071152,23.8096931 L12.6106902,23.7357139 L12.6232938,23.7196733 L12.6232938,23.7196733 L12.6266527,23.7031097 L12.609561,23.275831 C12.6075724,23.2657013 12.6010112,23.2592993 12.5934901,23.257841 L12.5934901,23.257841 Z M12.8583906,23.1452862 L12.8445485,23.1473072 L12.6598443,23.2396597 L12.6498822,23.2499052 L12.6498822,23.2499052 L12.6471943,23.2611114 L12.6650943,23.6906389 L12.6699349,23.7034178 L12.6699349,23.7034178 L12.678386,23.7104931 L12.8793402,23.8032389 C12.8914285,23.8068999 12.9022333,23.8029875 12.9078286,23.7952264 L12.9118235,23.7811639 L12.8776777,23.1665331 C12.8752882,23.1545897 12.8674102,23.1470016 12.8583906,23.1452862 L12.8583906,23.1452862 Z M12.1430473,23.1473072 C12.1332178,23.1423925 12.1221763,23.1452606 12.1156365,23.1525954 L12.1099173,23.1665331 L12.0757714,23.7811639 C12.0751323,23.7926639 12.0828099,23.8018602 12.0926481,23.8045676 L12.108256,23.8032389 L12.3092106,23.7104931 L12.3186497,23.7024347 L12.3186497,23.7024347 L12.3225043,23.6906389 L12.340401,23.2611114 L12.337245,23.2485176 L12.337245,23.2485176 L12.3277531,23.2396597 L12.1430473,23.1473072 Z" fillRule="nonzero"></path>
-                    <path d="M12,2.5 C12.7796706,2.5 13.4204457,3.09488554 13.4931332,3.85553954 L13.5,4 L13.5,20 C13.5,20.8284 12.8284,21.5 12,21.5 C11.2203294,21.5 10.5795543,20.9050879 10.5068668,20.1444558 L10.5,20 L10.5,4 C10.5,3.17157 11.1716,2.5 12,2.5 Z M8,5.5 C8.82843,5.5 9.5,6.17157 9.5,7 L9.5,17 C9.5,17.8284 8.82843,18.5 8,18.5 C7.17157,18.5 6.5,17.8284 6.5,17 L6.5,7 C6.5,6.17157 7.17157,5.5 8,5.5 Z M16,5.5 C16.8284,5.5 17.5,6.17157 17.5,7 L17.5,17 L17.5,17 C17.5,17.8284 16.8284,18.5 16,18.5 C15.1716,18.5 14.5,17.8284 14.5,17 L14.5,7 C14.5,6.17157 15.1716,5.5 16,5.5 Z M4,8.5 C4.82843,8.5 5.5,9.17157 5.5,10 L5.5,14 C5.5,14.8284 4.82843,15.5 4,15.5 C3.17157,15.5 2.5,14.8284 2.5,14 L2.5,10 C2.5,9.17157 3.17157,8.5 4,8.5 Z M20,8.5 C20.7796706,8.5 21.4204457,9.09488554 21.4931332,9.85553954 L21.5,10 L21.5,14 C21.5,14.8284 20.8284,15.5 20,15.5 C19.2203294,15.5 18.5795543,14.9050879 18.5068668,14.1444558 L18.5,14 L18.5,10 C18.5,9.17157 19.1716,8.5 20,8.5 Z" fillRule="nonzero"></path>
-                  </svg>
-                </button>
-              )}
+              <button 
+                onClick={skipToNext}
+                style={{
+                  width: "64px", 
+                  height: "64px", 
+                  borderRadius: "50%", 
+                  background: (isPreparing && prepareTime <= 3) ? "black" : "white",
+                  border: "none",
+                  color: (isPreparing && prepareTime <= 3) ? "white" : "black",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                  transition: "all 0.3s ease"
+                }}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
             </div>
 
             {/* UP NEXT — full-width cockpit readout */}
@@ -2250,16 +2385,16 @@ export default function Home() {
           <div className="splash-panel splash-panel-left"></div>
           <div className="splash-panel splash-panel-right"></div>
           <h1 
+            className="title"
             style={{ 
               margin: 0, 
               display: "flex",
               alignItems: "center",
               lineHeight: "1",
-              fontSize: "6rem",
               fontFamily: "var(--font-sans)"
             }}
           >
-            <span style={{ color: "white", position: "relative", zIndex: 10 }}>X</span>
+            <span style={{ color: "white", position: "relative", zIndex: 10, fontStyle: "italic" }}>X</span>
             <span style={{ overflow: "visible", display: "inline-flex" }}>
               <span 
                 data-text="OUT"
@@ -2440,6 +2575,269 @@ export default function Home() {
         </div>
       )}
 
+      {isTimerModalOpen && (
+        <div 
+          className="modal-overlay animate-fade-in"
+          style={{ 
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            background: (isTimerPreparing && timerPrepareTime <= 3) ? "var(--accent)" : "black",
+            zIndex: 10000,
+            overflowY: "auto",
+            padding: "20px"
+          }}
+        >
+          <div className="scanline-effect" />
+
+          {/* 1. TOP BAR: LOGO & CLOSE */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px", zIndex: 100 }}>
+            <h1 
+              className="title"
+              style={{ 
+                margin: 0, 
+                display: "flex",
+                alignItems: "center",
+                lineHeight: "1",
+                cursor: "pointer"
+              }}
+            >
+              <span style={{ color: (isTimerPreparing && timerPrepareTime <= 3) ? "black" : "white", position: "relative", zIndex: 10, fontStyle: "italic" }}>X</span>
+              <span style={{ overflow: "visible", display: "inline-flex" }}>
+                <span 
+                  data-text="OUT"
+                  className="logo-out-animate logo-text-shiny-ritual"
+                  style={{ 
+                    color: (isTimerPreparing && timerPrepareTime <= 3) ? "black" : "#daff00",
+                    '--logo-base-color': (isTimerPreparing && timerPrepareTime <= 3) ? "black" : "#daff00",
+                    paddingRight: "0.15em",
+                    fontStyle: "italic"
+                  } as React.CSSProperties}
+                >OUT</span>
+              </span>
+            </h1>
+            <button 
+              onClick={() => { setIsTimerModalOpen(false); setIsTimerRunning(false); setIsTimerPreparing(false); }}
+              style={{ 
+                width: "40px", 
+                height: "40px", 
+                borderRadius: "50%", 
+                background: (isTimerPreparing && timerPrepareTime <= 3) ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)", 
+                border: "none", 
+                color: (isTimerPreparing && timerPrepareTime <= 3) ? "black" : "white", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center", 
+                cursor: "pointer" 
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          {/* 2. SWITCHER */}
+          {!(isTimerRunning || isTimerPreparing) && (
+            <div style={{ display: "flex", background: "rgba(255,255,255,0.03)", padding: "4px", borderRadius: "100px", border: "1px solid rgba(255,255,255,0.1)", marginBottom: "24px", zIndex: 100 }}>
+              <button onClick={() => { setTimerMode('stopwatch'); setTimerSeconds(0); setInitialTimerSeconds(0); }} style={{ flex: 1, padding: "0.8rem", borderRadius: "100px", border: "none", fontSize: "0.7rem", fontWeight: "900", letterSpacing: "0.2em", cursor: "pointer", background: timerMode === 'stopwatch' ? "var(--accent)" : "none", color: timerMode === 'stopwatch' ? "black" : "rgba(255,255,255,0.4)" }}>STOPWATCH</button>
+              <button onClick={() => { setTimerMode('countdown'); setTimerSeconds(60); setInitialTimerSeconds(60); }} style={{ flex: 1, padding: "0.8rem", borderRadius: "100px", border: "none", fontSize: "0.7rem", fontWeight: "900", letterSpacing: "0.2em", cursor: "pointer", background: timerMode === 'countdown' ? "var(--accent)" : "none", color: timerMode === 'countdown' ? "black" : "rgba(255,255,255,0.4)" }}>COUNTDOWN</button>
+              <button onClick={() => { setTimerMode('tabata'); setTimerSeconds(20); setInitialTimerSeconds(20); setTabataPhase('work'); setCurrentTabataRound(1); }} style={{ flex: 1, padding: "0.8rem", borderRadius: "100px", border: "none", fontSize: "0.7rem", fontWeight: "900", letterSpacing: "0.2em", cursor: "pointer", background: timerMode === 'tabata' ? "var(--accent)" : "none", color: timerMode === 'tabata' ? "black" : "rgba(255,255,255,0.4)" }}>TABATA</button>
+            </div>
+          )}
+
+
+          {/* 4. ACTIVE STATUS BAR (ONLY WHEN RUNNING/PREPPING) */}
+          {(isTimerRunning || isTimerPreparing) && (
+            <div style={{ textAlign: "center", marginBottom: "30px" }}>
+              <div style={{ 
+                fontSize: "1.8rem", 
+                fontWeight: "900", 
+                letterSpacing: "0.3em", 
+                color: (isTimerPreparing && timerPrepareTime <= 3) ? "black" : "var(--accent)", 
+                textTransform: "uppercase",
+                marginBottom: "12px"
+              }}>
+                {isTimerPreparing ? "GET READY" : (timerMode === 'tabata' ? tabataPhase : "GO")}
+              </div>
+              {timerMode === 'tabata' && (
+                <div style={{ 
+                  fontSize: "2.8rem", 
+                  fontWeight: "900", 
+                  letterSpacing: "0.1em",
+                  color: (isTimerPreparing && timerPrepareTime <= 3) ? "black" : "white"
+                }}>
+                  ROUND {Math.min(currentTabataRound, tabataRounds)} / {tabataRounds}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 4. MASSIVE DIGITS */}
+          <div style={{ 
+            fontSize: "min(35vw, 11rem)", fontWeight: "900", letterSpacing: "-0.05em", textAlign: "center", lineHeight: 1, marginBottom: "20px",
+            paddingTop: (isTimerRunning || isTimerPreparing) ? "0px" : "20px",
+            color: (isTimerPreparing && timerPrepareTime <= 3) ? "black" : "white",
+            textShadow: (isTimerPreparing && timerPrepareTime <= 3) ? "none" : "0 0 40px rgba(255,255,255,0.1)",
+            fontVariantNumeric: "tabular-nums"
+          }}>
+            {isTimerPreparing ? timerPrepareTime : (
+              (timerMode === 'tabata' && !isTimerRunning && !isTimerPreparing) 
+                ? formatTime(tabataRounds * 30) 
+                : formatTime(timerSeconds)
+            )}
+          </div>
+
+          {/* 5. MODE-SPECIFIC CONTROLS (STABILIZED CONTAINER) */}
+          <div style={{ minHeight: "120px", display: "flex", flexDirection: "column", justifyContent: "center", marginBottom: "16px" }}>
+            {timerMode === 'countdown' && !(isTimerRunning || isTimerPreparing) && (
+              <div style={{ display: "flex", justifyContent: "center", gap: "0.8rem", flexWrap: "wrap" }}>
+                {[30, 50, 60, 120].map((s) => (
+                  <button 
+                    key={s} 
+                    onClick={() => { setTimerSeconds(s); setInitialTimerSeconds(s); }} 
+                    style={{ 
+                      padding: "0.8rem 1.2rem", 
+                      background: timerSeconds === s ? ((isTimerPreparing && timerPrepareTime <= 3) ? "black" : "var(--accent)") : "rgba(255,255,255,0.05)", 
+                      color: timerSeconds === s ? ((isTimerPreparing && timerPrepareTime <= 3) ? "var(--accent)" : "black") : ((isTimerPreparing && timerPrepareTime <= 3) ? "black" : "white"), 
+                      border: timerSeconds === s ? "none" : ((isTimerPreparing && timerPrepareTime <= 3) ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)"), 
+                      borderRadius: "100px", 
+                      fontSize: "0.85rem", 
+                      fontWeight: "900", 
+                      cursor: "pointer",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    {s < 60 ? `${s}S` : `${s/60}M`}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {timerMode === 'tabata' && !(isTimerRunning || isTimerPreparing) && (
+              <div style={{ textAlign: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "2rem" }}>
+                  <button 
+                    onClick={() => setTabataRounds(r => Math.max(1, r - 1))}
+                    style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "1.5rem", fontWeight: "900", cursor: "pointer" }}
+                  >
+                    -
+                  </button>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: "0.85rem", opacity: 0.5, letterSpacing: "0.2em", marginBottom: "4px" }}>ROUNDS</div>
+                    <div style={{ fontSize: "3rem", fontWeight: "900", lineHeight: 1 }}>{tabataRounds}</div>
+                  </div>
+                  <button 
+                    onClick={() => setTabataRounds(r => r + 1)}
+                    style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "1.5rem", fontWeight: "900", cursor: "pointer" }}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+
+          {/* 7. PLAY BUTTON (HEROIC ACTION BAR) */}
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "2rem", marginTop: "10px", paddingBottom: "260px" }}>
+            <div style={{ width: "80px", display: "flex", justifyContent: "center" }}>
+              <button 
+                onClick={() => setIsVoiceMuted(!isVoiceMuted)}
+                style={{ 
+                  width: "80px", 
+                  height: "80px", 
+                  borderRadius: "50%", 
+                  border: (isTimerPreparing && timerPrepareTime <= 3) ? "1px solid rgba(0,0,0,0.2)" : "1px solid rgba(255,255,255,0.1)", 
+                  background: (isTimerPreparing && timerPrepareTime <= 3) ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)", 
+                  color: (isTimerPreparing && timerPrepareTime <= 3) ? "black" : "white", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center", 
+                  cursor: "pointer",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                {isVoiceMuted ? (
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12,2.5 C12.7796706,2.5 13.4204457,3.09488554 13.4931332,3.85553954 L13.5,4 L13.5,20 C13.5,20.8284 12.8284,21.5 12,21.5 C11.2203294,21.5 10.5795543,20.9050879 10.5068668,20.1444558 L10.5,20 L10.5,4 C10.5,3.17157 11.1716,2.5 12,2.5 Z M8,5.5 C8.82843,5.5 9.5,6.17157 9.5,7 L9.5,17 C9.5,17.8284 8.82843,18.5 8,18.5 C7.17157,18.5 6.5,17.8284 6.5,17 L6.5,7 C6.5,6.17157 7.17157,5.5 8,5.5 Z M16,5.5 C16.8284,5.5 17.5,6.17157 17.5,7 L17.5,17 C17.5,17.8284 16.8284,18.5 16,18.5 C15.1716,18.5 14.5,17.8284 14.5,17 L14.5,7 C14.5,6.17157 15.1716,5.5 16,5.5 Z M4,8.5 C4.82843,8.5 5.5,9.17157 5.5,10 L5.5,14 C5.5,14.8284 4.82843,15.5 4,15.5 C3.17157,15.5 2.5,14.8284 2.5,14 L2.5,10 C2.5,9.17157 3.17157,8.5 4,8.5 Z M20,8.5 C20.7796706,8.5 21.4204457,9.09488554 21.4931332,9.85553954 L21.5,10 L21.5,14 C21.5,14.8284 20.8284,15.5 20,15.5 C19.2203294,15.5 18.5795543,14.9050879 18.5068668,14.1444558 L18.5,14 L18.5,10 C18.5,9.17157 19.1716,8.5 20,8.5 Z" opacity="0.4" />
+                  <line x1="2" y1="22" x2="22" y2="2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+              ) : (
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12,2.5 C12.7796706,2.5 13.4204457,3.09488554 13.4931332,3.85553954 L13.5,4 L13.5,20 C13.5,20.8284 12.8284,21.5 12,21.5 C11.2203294,21.5 10.5795543,20.9050879 10.5068668,20.1444558 L10.5,20 L10.5,4 C10.5,3.17157 11.1716,2.5 12,2.5 Z M8,5.5 C8.82843,5.5 9.5,6.17157 9.5,7 L9.5,17 C9.5,17.8284 8.82843,18.5 8,18.5 C7.17157,18.5 6.5,17.8284 6.5,17 L6.5,7 C6.5,6.17157 7.17157,5.5 8,5.5 Z M16,5.5 C16.8284,5.5 17.5,6.17157 17.5,7 L17.5,17 C17.5,17.8284 16.8284,18.5 16,18.5 C15.1716,18.5 14.5,17.8284 14.5,17 L14.5,7 C14.5,6.17157 15.1716,5.5 16,5.5 Z M4,8.5 C4.82843,8.5 5.5,9.17157 5.5,10 L5.5,14 C5.5,14.8284 4.82843,15.5 4,15.5 C3.17157,15.5 2.5,14.8284 2.5,14 L2.5,10 C2.5,9.17157 3.17157,8.5 4,8.5 Z M20,8.5 C20.7796706,8.5 21.4204457,9.09488554 21.4931332,9.85553954 L21.5,10 L21.5,14 C21.5,14.8284 20.8284,15.5 20,15.5 C19.2203294,15.5 18.5795543,14.9050879 18.5068668,14.1444558 L18.5,14 L18.5,10 C18.5,9.17157 19.1716,8.5 20,8.5 Z" />
+                </svg>
+              )}
+              </button>
+            </div>
+
+            <button 
+              onClick={() => { 
+                primeAudio();
+                if (isTimerRunning || isTimerPreparing) {
+                  setIsTimerRunning(false);
+                  setIsTimerPreparing(false);
+                } else {
+                  setTimerPrepareTime(10);
+                  setIsTimerPreparing(true);
+                }
+              }}
+              style={{ 
+                width: "120px", 
+                height: "120px", 
+                borderRadius: "50%", 
+                background: (isTimerPreparing && timerPrepareTime <= 3) ? "black" : "var(--accent)", 
+                color: (isTimerPreparing && timerPrepareTime <= 3) ? "var(--accent)" : "black", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center", 
+                border: "none", 
+                cursor: "pointer", 
+                boxShadow: (isTimerPreparing && timerPrepareTime <= 3) ? "none" : "0 0 40px rgba(218,255,0,0.3)",
+                transition: "all 0.2s ease",
+                zIndex: 10
+              }}
+            >
+              {isTimerRunning || isTimerPreparing ? (
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              ) : (
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: "6px" }}><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              )}
+            </button>
+
+            <div style={{ width: "80px", display: "flex", justifyContent: "center" }}>
+              {(isTimerRunning || isTimerPreparing || (timerMode === 'stopwatch' && timerSeconds > 0) || (timerMode === 'countdown' && timerSeconds !== initialTimerSeconds) || (timerMode === 'tabata' && (currentTabataRound > 1 || tabataPhase !== 'work' || timerSeconds !== 20))) && (
+                <button 
+                  onClick={() => { 
+                    setIsTimerRunning(false); 
+                    setIsTimerPreparing(false); 
+                    setTimerSeconds(initialTimerSeconds);
+                    if (timerMode === 'tabata') setCurrentTabataRound(1);
+                  }}
+                  style={{ 
+                    width: "80px", 
+                    height: "80px", 
+                    borderRadius: "50%", 
+                    border: (isTimerPreparing && timerPrepareTime <= 3) ? "1px solid rgba(0,0,0,0.2)" : "1px solid rgba(255,255,255,0.1)", 
+                    background: (isTimerPreparing && timerPrepareTime <= 3) ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)", 
+                    color: (isTimerPreparing && timerPrepareTime <= 3) ? "black" : "white", 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center", 
+                    cursor: "pointer",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {/* Time Ritual Modal - PERSISTENT SLIDE SUPPORT */}
       <div 
         onClick={() => setIsTimeSheetOpen(false)}
@@ -2479,24 +2877,21 @@ export default function Home() {
           onClick={() => setIsTimeSheetOpen(false)}
           style={{
             position: "absolute",
-            top: "1.2rem",
-            right: "1.2rem",
-            width: "56px",
-            height: "56px",
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.05)",
-            border: "none",
-            color: "white",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            top: "calc(2.5rem + 20px)",
+            right: "2rem",
+            background: "none", 
+            border: "none", 
+            color: "white", 
             cursor: "pointer",
-            fontSize: "1.2rem",
-            fontWeight: "300",
+            opacity: 0.5,
+            transition: "opacity 0.2s",
             zIndex: 10
           }}
         >
-          ✕
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
         <header style={{
 
@@ -2652,27 +3047,26 @@ export default function Home() {
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s",
         willChange: "transform"
       }}>
-          <button 
-            onClick={() => setIsFavoritesOpen(false)}
-            style={{
-              position: "absolute",
-              top: "1.2rem",
-              right: "1.2rem",
-              width: "56px",
-              height: "56px",
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.05)",
-              border: "none",
-              color: "white",
-              fontSize: "1.2rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              fontWeight: "300",
-              zIndex: 10
-            }}
-          >✕</button>
+        <button 
+          onClick={() => setIsFavoritesOpen(false)}
+          style={{
+            position: "absolute",
+            top: "calc(2.5rem + 20px)",
+            right: "2rem",
+            background: "none", 
+            border: "none", 
+            color: "white", 
+            cursor: "pointer",
+            opacity: 0.5,
+            transition: "opacity 0.2s",
+            zIndex: 10
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
           <header style={{
             padding: "2.2rem 1.5rem",
             borderBottom: "1px solid rgba(255,255,255,0.05)",
@@ -2766,27 +3160,24 @@ export default function Home() {
         willChange: "transform"
       }}>
         <button 
-          onClick={() => setIsWeightOpen(false)}
-          style={{
+          onClick={() => setIsWeightOpen(false)} 
+          style={{ 
             position: "absolute",
-            top: "1.2rem",
-            right: "1.2rem",
-            width: "56px",
-            height: "56px",
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.1)",
-            border: "none",
-            color: "white",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            top: "calc(2.5rem + 20px)",
+            right: "2rem",
+            background: "none", 
+            border: "none", 
+            color: "white", 
             cursor: "pointer",
-            fontSize: "1.2rem",
-            fontWeight: "300",
+            opacity: 0.5,
+            transition: "opacity 0.2s",
             zIndex: 10
           }}
         >
-          ✕
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
         <header style={{
           padding: "2.2rem 1.5rem",
@@ -2916,24 +3307,21 @@ export default function Home() {
           onClick={() => setIsLibraryOpen(false)}
           style={{
             position: "absolute",
-            top: "1.2rem",
-            right: "1.2rem",
-            width: "56px",
-            height: "56px",
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.05)",
-            border: "none",
-            color: "white",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            top: "calc(2.5rem + 20px)",
+            right: "2rem",
+            background: "none", 
+            border: "none", 
+            color: "white", 
             cursor: "pointer",
-            fontSize: "1.2rem",
-            fontWeight: "300",
+            opacity: 0.5,
+            transition: "opacity 0.2s",
             zIndex: 10
           }}
         >
-          ✕
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
           <header style={{
             display: "flex",
@@ -3014,6 +3402,7 @@ export default function Home() {
                     </button>
                     <button 
                       onClick={() => {
+                        primeAudio();
                         if (workout.duration) setSelectedTime(workout.duration);
                         setSelectionMode('manual');
                         // Load the ritual exactly as saved, bypassing the auto-sync favorites injection
@@ -3081,23 +3470,22 @@ export default function Home() {
           onClick={() => setIsAreaModalOpen(false)}
           style={{
             position: "absolute",
-            top: "1.2rem",
-            right: "1.2rem",
-            width: "56px",
-            height: "56px",
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.05)",
-            border: "none",
-            color: "white",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            top: "calc(2.5rem + 20px)",
+            right: "2rem",
+            background: "none", 
+            border: "none", 
+            color: "white", 
             cursor: "pointer",
-            fontSize: "1.2rem",
-            fontWeight: "300",
+            opacity: 0.5,
+            transition: "opacity 0.2s",
             zIndex: 10
           }}
-        >✕</button>
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
         <header style={{
           padding: "2.2rem 1.5rem",
           borderBottom: "1px solid rgba(255,255,255,0.05)",

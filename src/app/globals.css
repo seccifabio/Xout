@@ -317,3 +317,38 @@ main {
 .splash-screen.exit h1 {
   animation: splashFadeLogo 0.4s ease-out forwards;
 }
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.scanline-effect {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(217, 255, 0, 0.03) 50%,
+    transparent
+  );
+  background-size: 100% 4px;
+  animation: scanline 6s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes pulse-accent {
+  0% { opacity: 0; }
+  50% { opacity: 0.15; }
+  100% { opacity: 0; }
+}
+
+.pulse-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  pointer-events: none;
+  z-index: 2;
+  animation: pulse-accent 0.5s ease-out;
+}
