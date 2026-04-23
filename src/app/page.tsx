@@ -2690,7 +2690,14 @@ export default function Home() {
           </div>
 
           {/* 5. MODE-SPECIFIC CONTROLS (STABILIZED CONTAINER) */}
-          <div style={{ minHeight: "140px", display: "flex", flexDirection: "column", justifyContent: "center", marginBottom: "24px" }}>
+          <div style={{ 
+            minHeight: (isTimerRunning || isTimerPreparing) ? "20px" : "140px", 
+            display: "flex", 
+            flexDirection: "column", 
+            justifyContent: "center", 
+            marginBottom: (isTimerRunning || isTimerPreparing) ? "0px" : "24px",
+            transition: "all 0.3s ease"
+          }}>
             {timerMode === 'countdown' && !(isTimerRunning || isTimerPreparing) && (
               <div style={{ display: "flex", justifyContent: "center", gap: "0.8rem", flexWrap: "wrap" }}>
                 {[30, 50, 60, 120].map((s) => (
