@@ -2690,7 +2690,7 @@ export default function Home() {
           </div>
 
           {/* 5. MODE-SPECIFIC CONTROLS (STABILIZED CONTAINER) */}
-          <div style={{ minHeight: "120px", display: "flex", flexDirection: "column", justifyContent: "center", marginBottom: "16px" }}>
+          <div style={{ minHeight: "140px", display: "flex", flexDirection: "column", justifyContent: "center", marginBottom: "24px" }}>
             {timerMode === 'countdown' && !(isTimerRunning || isTimerPreparing) && (
               <div style={{ display: "flex", justifyContent: "center", gap: "0.8rem", flexWrap: "wrap" }}>
                 {[30, 50, 60, 120].map((s) => (
@@ -2741,7 +2741,7 @@ export default function Home() {
 
 
           {/* 7. PLAY BUTTON (HEROIC ACTION BAR) */}
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "2rem", marginTop: "10px", paddingBottom: "260px" }}>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "2rem", marginTop: "20px", paddingBottom: "180px" }}>
             <div style={{ width: "80px", display: "flex", justifyContent: "center" }}>
               <button 
                 onClick={() => setIsVoiceMuted(!isVoiceMuted)}
