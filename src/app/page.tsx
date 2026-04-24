@@ -285,6 +285,28 @@ export default function Home() {
   const [tabataRounds, setTabataRounds] = useState(8);
   const [currentTabataRound, setCurrentTabataRound] = useState(1);
   const [tabataPhase, setTabataPhase] = useState<'work' | 'rest'>('work');
+
+  // Tabata Telemetry Calculations
+  const tabataTotalDuration = (tabataRounds * 20) + ((tabataRounds - 1) * 10);
+  
+  const tabataElapsedSeconds = useMemo(() => {
+    if (timerMode !== 'tabata') return 0;
+    let elapsed = 0;
+    // Finished rounds
+    elapsed += (currentTabataRound - 1) * 30;
+    // Current round
+    if (tabataPhase === 'work') {
+      elapsed += (20 - timerSeconds);
+    } else {
+      elapsed += 20 + (10 - timerSeconds);
+    }
+    return Math.max(0, elapsed);
+  }, [timerMode, currentTabataRound, tabataPhase, timerSeconds]);
+
+  const caloriesBurnedLive = useMemo(() => {
+    // 0.175 kcal/sec for high intensity HIIT/Tabata
+    return tabataElapsedSeconds * 0.175;
+  }, [tabataElapsedSeconds]);
   const [isFinished, setIsFinished] = useState(false);
   const [isCooldown, setIsCooldown] = useState(false);
   const [hasCompletedCooldown, setHasCompletedCooldown] = useState(false);
@@ -302,9 +324,16 @@ export default function Home() {
   const wakeLockRef = useRef<any>(null);
   
 
-  const beepAudioRef = useRef<any>(null);
-  const bellAudioRef = useRef<any>(null);
-  const ignitionAudioRef = useRef<any>(null);
+  const speak = (text: string) => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      // Cancel any ongoing speech to avoid overlapping
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.1; // Slightly faster for workout energy
+      utterance.pitch = 0.9; // Deeper, more brutalist tone
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -330,12 +359,14 @@ export default function Home() {
                     setTabataPhase('rest');
                     setInitialTimerSeconds(10);
                     if (bellAudioRef.current) { bellAudioRef.current.currentTime = 0; bellAudioRef.current.play(); }
+                    speak("REST");
                     return 10; // Rest period
                   } else {
                     // Final Work period finished -> Success Ritual
                     setIsTimerRunning(false);
                     const successAudio = new Audio('/freesound_community-yeah-96783.mp3');
                     successAudio.play().catch(e => console.log("Success audio blocked", e));
+                    speak("WORKOUT COMPLETE");
                     return 0;
                   }
                 } else {
@@ -344,16 +375,22 @@ export default function Home() {
                   setInitialTimerSeconds(20);
                   setCurrentTabataRound(r => r + 1);
                   if (bellAudioRef.current) { bellAudioRef.current.currentTime = 0; bellAudioRef.current.play(); }
+                  speak("WORK");
                   return 20; // Work period
                 }
               } else {
                 setIsTimerRunning(false);
                 if (ignitionAudioRef.current) { ignitionAudioRef.current.currentTime = 0; ignitionAudioRef.current.play(); }
+                speak("COMPLETE");
                 return 0;
               }
             }
-            // Warning Beeps (Last 4s)
-            if (prev <= 4) {
+            // Warning Beeps (Last 3s: Beep at 3, 2, 1)
+            // prev is the value before decrementing. 
+            // If prev is 4, it beeps and next is 3. UI shows 3. (Beep for 3)
+            // If prev is 3, it beeps and next is 2. UI shows 2. (Beep for 2)
+            // If prev is 2, it beeps and next is 1. UI shows 1. (Beep for 1)
+            if (prev <= 4 && prev > 1) {
               if (beepAudioRef.current) { beepAudioRef.current.currentTime = 0; beepAudioRef.current.play(); }
             }
             return prev - 1;
@@ -364,6 +401,8 @@ export default function Home() {
       // THE "GET READY" RITUAL LOOP
       interval = setInterval(() => {
         setTimerPrepareTime(prev => {
+          if (prev === 10) speak("GET READY"); // Speak at the very start
+
           if (prev <= 1) {
             setIsTimerPreparing(false);
             setIsTimerRunning(true);
@@ -371,9 +410,11 @@ export default function Home() {
               ignitionAudioRef.current.currentTime = 0;
               ignitionAudioRef.current.play().catch((e: any) => console.log("Ignition blocked", e));
             }
+            if (timerMode === 'tabata') speak("WORK");
             return 0;
           }
-          if (prev <= 4) {
+          // Beep at 3, 2, 1
+          if (prev <= 4 && prev > 1) {
             if (beepAudioRef.current) {
               beepAudioRef.current.currentTime = 0;
               beepAudioRef.current.play().catch((e: any) => console.log("Beep blocked", e));
@@ -2685,10 +2726,37 @@ export default function Home() {
           }}>
             {isTimerPreparing ? timerPrepareTime : (
               (timerMode === 'tabata' && !isTimerRunning && !isTimerPreparing) 
-                ? formatTime(tabataRounds * 30) 
+                ? formatTime(20) // Start with 20s work
                 : formatTime(timerSeconds)
             )}
           </div>
+
+          {/* 5. TELEMETRY BAR (TOTAL TIME & CALORIES) */}
+          {timerMode === 'tabata' && (isTimerRunning || isTimerPreparing || currentTabataRound > 1 || (tabataPhase === 'work' && timerSeconds < 20)) && (
+            <div style={{ 
+              display: "flex", 
+              justifyContent: "center", 
+              gap: "3rem", 
+              marginBottom: "30px",
+              marginTop: "-10px",
+              opacity: (isTimerPreparing && timerPrepareTime <= 3) ? 1 : 0.8,
+              color: (isTimerPreparing && timerPrepareTime <= 3) ? "black" : "white",
+              zIndex: 100
+            }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: "0.6rem", fontWeight: "900", letterSpacing: "0.2em", marginBottom: "2px", opacity: 0.5 }}>TOTAL REMAINING</div>
+                <div style={{ fontSize: "1.4rem", fontWeight: "900", letterSpacing: "0.05em" }}>
+                  {formatTime(Math.max(0, tabataTotalDuration - tabataElapsedSeconds))}
+                </div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: "0.6rem", fontWeight: "900", letterSpacing: "0.2em", marginBottom: "2px", opacity: 0.5 }}>CALORIES</div>
+                <div style={{ fontSize: "1.4rem", fontWeight: "900", letterSpacing: "0.05em" }}>
+                  {Math.floor(caloriesBurnedLive)}<span style={{ fontSize: "0.7rem", marginLeft: "2px", opacity: 0.5 }}>KCAL</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 5. MODE-SPECIFIC CONTROLS (STABILIZED CONTAINER) */}
           <div style={{ 
