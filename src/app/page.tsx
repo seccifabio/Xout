@@ -325,12 +325,27 @@ export default function Home() {
   
 
   const speak = (text: string) => {
+    if (isVoiceMuted) return;
+    // Allow speaking if either the main ritual is active OR the independent timer modal is active
+    if (!isTrainingRef.current && !isTimerModalOpen) return;
+
     if (typeof window !== "undefined" && window.speechSynthesis) {
+      if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+      
       // Cancel any ongoing speech to avoid overlapping
       window.speechSynthesis.cancel();
+      
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.1; // Slightly faster for workout energy
-      utterance.pitch = 0.9; // Deeper, more brutalist tone
+      
+      // Safari/iOS Compatibility: Force local OS voice
+      const voices = window.speechSynthesis.getVoices();
+      const localVoice = voices.find(v => v.localService && v.lang.startsWith('en')) || voices[0];
+      if (localVoice) {
+        utterance.voice = localVoice;
+      }
+
+      utterance.rate = 1.1; // High energy
+      utterance.pitch = 0.9; // Brutalist tone
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -889,35 +904,7 @@ export default function Home() {
     setIsPaused(false);
   };
 
-  const speak = (text: string) => {
-    if (!isTrainingRef.current || isVoiceMuted) return; // Don't speak if session is stopped or muted
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      console.log("XOUT AUDIO DEPLOY: ", text);
-      
-      if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-      
-      // Only cancel if actively speaking to avoid Chrome queue destruction
-      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-        window.speechSynthesis.cancel();
-      }
-      
-      const utterance = new SpeechSynthesisUtterance(text);
-      (window as any)._xoutUtterance = utterance; 
-      
-      // Force local OS voice to bypass network blocks
-      const voices = window.speechSynthesis.getVoices();
-      const localVoice = voices.find(v => v.localService && v.lang.startsWith('en')) || voices[0];
-      if (localVoice) {
-        utterance.voice = localVoice;
-      }
 
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      
-      // Synchronous execution REQUIRED for iOS Safari interaction-lock
-      window.speechSynthesis.speak(utterance);
-    }
-  };
 
   const playBeep = () => {
     if (!isTrainingRef.current) return;
