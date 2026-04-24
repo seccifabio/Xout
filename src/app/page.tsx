@@ -112,6 +112,9 @@ export default function Home() {
   const [isTraining, setIsTraining] = useState(false);
   const isTrainingRef = useRef(false); // Synchronous guard for speak() — React state is async
   const [isPreparing, setIsPreparing] = useState(false);
+  const beepAudioRef = useRef<HTMLAudioElement | null>(null);
+  const bellAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ignitionAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // VIEWPORT STABILITY RITUAL: Prevent shifting on session start
   useEffect(() => {
