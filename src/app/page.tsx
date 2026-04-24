@@ -598,8 +598,9 @@ export default function Home() {
       requestWakeLock();
       document.addEventListener('visibilitychange', handleVisibilityChange);
     } else {
-      if (wakeLockRef.current) {
-        wakeLockRef.current.release().then(() => { wakeLockRef.current = null; }).catch(() => {});
+      const lock = wakeLockRef.current;
+      if (lock) {
+        lock.release().then(() => { wakeLockRef.current = null; }).catch(() => {});
       }
     }
 
@@ -854,10 +855,11 @@ export default function Home() {
     playIgnitionBeep();
 
     // Unlock native HTML5 audio for iOS background processing
-    if (beepAudioRef.current) {
-      beepAudioRef.current.play().then(() => {
-        beepAudioRef.current.pause();
-        beepAudioRef.current.currentTime = 0;
+    const beepAudio = beepAudioRef.current;
+    if (beepAudio) {
+      beepAudio.play().then(() => {
+        beepAudio.pause();
+        beepAudio.currentTime = 0;
       }).catch(() => {});
     }
 
@@ -951,16 +953,18 @@ export default function Home() {
   };
 
   const primeAudio = () => {
-    if (beepAudioRef.current) {
-      beepAudioRef.current.play().then(() => {
-        beepAudioRef.current.pause();
-        beepAudioRef.current.currentTime = 0;
+    const beep = beepAudioRef.current;
+    if (beep) {
+      beep.play().then(() => {
+        beep.pause();
+        beep.currentTime = 0;
       }).catch((e: any) => console.log("Audio priming blocked", e));
     }
-    if (ignitionAudioRef.current) {
-      ignitionAudioRef.current.play().then(() => {
-        ignitionAudioRef.current.pause();
-        ignitionAudioRef.current.currentTime = 0;
+    const ignition = ignitionAudioRef.current;
+    if (ignition) {
+      ignition.play().then(() => {
+        ignition.pause();
+        ignition.currentTime = 0;
       }).catch((e: any) => console.log("Audio priming blocked", e));
     }
     // Prime Speech Synthesis Ritual
