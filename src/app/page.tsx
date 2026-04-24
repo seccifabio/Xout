@@ -323,14 +323,13 @@ export default function Home() {
 
   const [weights, setWeights] = useState<{ date: string, value: number }[]>([]);
   const [isWeightOpen, setIsWeightOpen] = useState(false);
+  const [finalTabataStats, setFinalTabataStats] = useState<{ calories: number, duration: number } | null>(null);
 
   const wakeLockRef = useRef<any>(null);
   
 
   const speak = (text: string) => {
     if (isVoiceMuted) return;
-    // Allow speaking if either the main ritual is active OR the independent timer modal is active
-    if (!isTrainingRef.current && !isTimerModalOpen) return;
 
     if (typeof window !== "undefined" && window.speechSynthesis) {
       if (window.speechSynthesis.paused) window.speechSynthesis.resume();
@@ -382,6 +381,13 @@ export default function Home() {
                   } else {
                     // Final Work period finished -> Success Ritual
                     setIsTimerRunning(false);
+                    setIsTimerModalOpen(false);
+                    setFinalTabataStats({
+                      calories: caloriesBurnedLive,
+                      duration: tabataTotalDuration
+                    });
+                    setIsFinished(true);
+                    
                     const successAudio = new Audio('/freesound_community-yeah-96783.mp3');
                     successAudio.play().catch(e => console.log("Success audio blocked", e));
                     speak("WORKOUT COMPLETE");
@@ -570,7 +576,7 @@ export default function Home() {
       }
     };
 
-    if (isTraining && !isPaused) {
+    if ((isTraining || isTimerRunning) && !isPaused) {
       requestWakeLock();
       document.addEventListener('visibilitychange', handleVisibilityChange);
     } else {
@@ -585,7 +591,7 @@ export default function Home() {
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isTraining, isPaused]);
+  }, [isTraining, isTimerRunning, isPaused]);
 
   const generateSession = () => {
     const totalCycle = (globalDuration || 45) + (breakTime || 0);
@@ -905,6 +911,7 @@ export default function Home() {
     setElapsedTime(0);
     setTimeLeft(session[0]?.duration || 60);
     setIsPaused(false);
+    setFinalTabataStats(null); // Clear Tabata results when closing
   };
 
 
@@ -2515,7 +2522,7 @@ export default function Home() {
                 lineHeight: 0.8, 
                 margin: 0,
                 filter: "drop-shadow(0 0 40px rgba(218, 255, 0, 0.3))"
-              }}>{Math.round(caloriesBurned)}</h2>
+              }}>{Math.round(finalTabataStats ? finalTabataStats.calories : caloriesBurned)}</h2>
               <span style={{ fontSize: "1.6rem", fontWeight: "900", color: "white", opacity: 0.4 }}>KCAL</span>
             </div>
             
@@ -2527,7 +2534,12 @@ export default function Home() {
               color: "white",
               opacity: 0.9,
               letterSpacing: "0.4em"
-            }}>{Math.floor((totalSessionDuration * totalRounds) / 60)}:{( (totalSessionDuration * totalRounds) % 60).toString().padStart(2, '0')} TOTAL TIME</div>
+            }}>
+              {finalTabataStats 
+                ? `${Math.floor(finalTabataStats.duration / 60)}:${(finalTabataStats.duration % 60).toString().padStart(2, '0')}`
+                : `${Math.floor((totalSessionDuration * totalRounds) / 60)}:${( (totalSessionDuration * totalRounds) % 60).toString().padStart(2, '0')}`
+              } TOTAL TIME
+            </div>
           </div>
 
           {/* PRIMARY ACTIONS RITUAL */}
