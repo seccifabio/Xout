@@ -420,11 +420,16 @@ export default function Home() {
     if (!isTimerRunning && !isTimerPreparing) return;
     if (isPaused) return;
 
-    const time = isTimerPreparing ? timerPrepareTime : timerSeconds;
-    if (time <= 3 && time > 0) {
-      if (beepAudioRef.current) { beepAudioRef.current.currentTime = 0; beepAudioRef.current.play().catch(() => {}); }
+    if (isTimerPreparing) {
+      if (timerPrepareTime <= 3 && timerPrepareTime >= 1) {
+        if (beepAudioRef.current) { beepAudioRef.current.currentTime = 0; beepAudioRef.current.play().catch(() => {}); }
+      }
+    } else if (timerMode !== 'stopwatch') {
+      if (timerSeconds <= 3 && timerSeconds >= 1) {
+        if (beepAudioRef.current) { beepAudioRef.current.currentTime = 0; beepAudioRef.current.play().catch(() => {}); }
+      }
     }
-  }, [timerSeconds, timerPrepareTime, isTimerRunning, isTimerPreparing, isPaused]);
+  }, [timerSeconds, timerPrepareTime, isTimerRunning, isTimerPreparing, isPaused, timerMode]);
 
   // PREPARATION -> RUNNING TRANSITION
   useEffect(() => {
@@ -952,6 +957,31 @@ export default function Home() {
       const u = new SpeechSynthesisUtterance("");
       u.volume = 0; // Silent priming
       window.speechSynthesis.speak(u);
+    }
+    
+    // Unlock native HTML5 audio for background processing and interactions
+    const beepAudio = beepAudioRef.current;
+    if (beepAudio) {
+      beepAudio.play().then(() => {
+        beepAudio.pause();
+        beepAudio.currentTime = 0;
+      }).catch(() => {});
+    }
+
+    const ignitionAudio = ignitionAudioRef.current;
+    if (ignitionAudio) {
+      ignitionAudio.play().then(() => {
+        ignitionAudio.pause();
+        ignitionAudio.currentTime = 0;
+      }).catch(() => {});
+    }
+
+    const bellAudio = bellAudioRef.current;
+    if (bellAudio) {
+      bellAudio.play().then(() => {
+        bellAudio.pause();
+        bellAudio.currentTime = 0;
+      }).catch(() => {});
     }
   };
 
